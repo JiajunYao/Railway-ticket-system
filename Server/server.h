@@ -3,4 +3,6 @@
 int create_listening_fifo(char* server_public_fifo_name, FILE** read_file);
 int close_listening_fifo(FILE* read_file);
 int establish_client_server_fifo_connection(pid_t client_pid, FILE** read_file, FILE** write_file);
+
+int create_listening_socket();
 #endif

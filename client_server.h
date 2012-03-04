@@ -18,10 +18,16 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 
 #define BUFFER_SIZE 1024
+#define SERVER_PORT 5001
+#define LISTEN_BACKLOG 50
+#define SERVER_IP_ADDRESS "127.0.0.1"
 #define SERVER_PUBLIC_FIFO_NAME "/tmp/server_public_fifo"
+#define SA struct sockaddr
 
 #define ESTABLISH_CONNECTION_REQUEST 0
 #define ESTABLISH_CONNECTION_RESPONSE 1

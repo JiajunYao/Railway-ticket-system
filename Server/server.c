@@ -5,6 +5,7 @@
 #include "server.h"
 
 int fifo_server_run();
+int socket_server_run();
 void sig_chld(int signo);
 
 int main()
@@ -88,6 +89,76 @@ int fifo_server_run()
 
 				return 0;
 			}
+		}
+	}
+}
+
+int socket_server_run()
+{
+	int listen_fd, connect_fd;
+	struct sockaddr_in client_addr;
+	socklen_t client_len;
+
+	if((listen_fd = create_listening_socket()) == -1)
+	{
+		fprintf(stderr, "can't create listening socket\n");
+		return -1;
+	}
+
+	#ifdef __DEBUG__
+	fprintf(stdout, "start listening\n");
+	#endif
+
+	if(signal(SIGCHLD, sig_chld) == SIG_ERR)
+	{
+		fprintf(stderr, "can't bind signal handler\n");
+		return -1;
+	}
+	
+	while(true)
+	{
+		client_len = sizeof(client_addr);
+		if((connect_fd = accept(listen_fd, (SA*)&client_addr, &client_len)) < 0)
+		{
+			if(errno == EINTR)
+				continue;
+			else
+			{
+				fprintf(stderr, "accept error\n");
+				return -1;
+			}
+		}
+
+		if(fork() == 0) // child process
+		{
+			FILE* read_file;
+			FILE* write_file;
+
+			if(close(listen_fd) == -1)
+			{
+				fprintf(stderr, "server child close listening socket error\n");
+				return -1;
+			}
+			
+			if((read_file = fdopen(connect_fd, "r+")) == NULL)
+			{
+				fprintf(stderr, "convertion from connected socket fd to FILE struct has error\n");
+				return -1;
+			}
+
+			write_file = read_file; // socket is duplex
+
+			#ifdef __DEBUG__
+			fprintf(stdout, "establish client server socket connection\n");
+			#endif
+
+			return 0;
+		}
+
+		if(close(connect_fd) == -1)
+		{
+			fprintf(stderr, "server close connected socket error\n");
+			return -1;
 		}
 	}
 }

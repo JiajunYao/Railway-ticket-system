@@ -94,3 +94,38 @@ int establish_client_server_fifo_connection(pid_t client_pid, FILE** read_file, 
 	}
 	return 0;
 }
+
+/**
+ * create a listening socket
+ * @return socket file descriptor or -1 for error
+ */
+int create_listening_socket()
+{
+	int listen_fd;
+	struct sockaddr_in server_addr;
+
+	if((listen_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+	{
+		fprintf(stderr, "can't create a listening socket\n");
+		return -1;
+	}
+	
+	bzero(&server_addr, sizeof(server_addr));
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	server_addr.sin_port = htons(SERVER_PORT);
+
+	if(bind(listen_fd, (SA *)&server_addr, sizeof(server_addr)) == -1)
+	{
+		fprintf(stderr, "can't bind listening socket\n");
+		return -1;
+	}
+
+	if(listen(listen_fd, LISTEN_BACKLOG) == -1)
+	{
+		fprintf(stderr, "can't listen on listening socket\n");
+		return -1;
+	}
+	
+	return listen_fd;
+}
