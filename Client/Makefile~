@@ -1,0 +1,7 @@
+client : client.o client_connection.o
+	gcc -o client client.o client_connection.o
+client.o : client.c
+	gcc -o client.o -c client.c -D__DEBUG__
+client_connection.o : client_connection.c
+	gcc -o client_connection.o -c client_connection.c -D__DEBUG__
+

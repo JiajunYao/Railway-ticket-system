@@ -1,0 +1,14 @@
+###############
+ESTABLISH_CONNECTION_REQUEST
+%d\n%d\n message_type client_pid
+###############
+
+
+###############
+ESTABLISH_CONNECTION_RESPONSE
+%d\n%d\n message_type server_pid
+###############
+
+
+###############
+
