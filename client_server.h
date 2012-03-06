@@ -29,10 +29,15 @@
 #define SERVER_PUBLIC_FIFO_NAME "/tmp/server_public_fifo"
 #define SA struct sockaddr
 
-#define ESTABLISH_CONNECTION_REQUEST 0
-#define ESTABLISH_CONNECTION_RESPONSE 1
-#define ESTABLISH_CONNECTION_ACK 2
+#define SUCCESS 0
+#define FAILURE 1
+#define ESTABLISH_CONNECTION_REQUEST 2
+#define ESTABLISH_CONNECTION_RESPONSE 3
+#define ESTABLISH_CONNECTION_ACK 4
+#define REGISTER_REQUEST 5
+#define REGISTER_RESPONSE 6
 
 char* Fgets(char* s, int size, FILE* stream);
-
+ssize_t Write(int fd, const void *vptr, size_t n);
+int Accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 #endif

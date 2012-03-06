@@ -9,9 +9,16 @@ int socket_client_run();
 
 int main()
 {
-	if(fifo_client_run() == -1)
+	/*--------------------------------------------------
+	* if(fifo_client_run() == -1)
+	* {
+	* 	fprintf(stderr, "client run error\n");
+	* 	exit(-1);
+	* }
+	*--------------------------------------------------*/
+	if(run_client_core(0, 0) == -1)
 	{
-		fprintf(stderr, "client run error\n");
+		fprintf(stderr, "client core has error\n");
 		exit(-1);
 	}
 
@@ -34,7 +41,6 @@ int fifo_client_run()
 	}
 
 	return 0;
-
 }
 
 int socket_client_run()

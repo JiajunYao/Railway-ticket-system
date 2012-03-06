@@ -118,15 +118,10 @@ int socket_server_run()
 	while(true)
 	{
 		client_len = sizeof(client_addr);
-		if((connect_fd = accept(listen_fd, (SA*)&client_addr, &client_len)) < 0)
+		if((connect_fd = Accept(listen_fd, (SA*)&client_addr, &client_len)) == -1)
 		{
-			if(errno == EINTR)
-				continue;
-			else
-			{
-				fprintf(stderr, "accept error\n");
-				return -1;
-			}
+			fprintf(stderr, "accept error\n");
+			return -1;
 		}
 
 		if(fork() == 0) // child process
@@ -171,7 +166,7 @@ void sig_chld(int signo)
 	while((pid = waitpid(-1, &stat, WNOHANG)) > 0)
 	{
 		#ifdef __DEBUG__
-		fprintf(stdout, "child %d terminated\n", pid);
+		printf("child %d terminated\n", pid);
 		#endif
 	}
 	

@@ -3,6 +3,8 @@ set storage_engine = InnoDB;
 
 create database if not exists railway_ticket_system;
 
+use railway_ticket_system;
+
 drop table if exists client;
 create table if not exists client(
 	id bigint(20) primary key auto_increment,
@@ -17,13 +19,13 @@ create table if not exists train(
 	id bigint(20) primary key auto_increment,
 	name varchar(255) not null, -- the name of the train such as G7095
 	departure_time timestamp not null, -- the most recent departure time from the initiaing station
-	cycle_time integer(10) --the interval between two adjacent departures
+	cycle_time integer(10) not null -- the interval between two adjacent departures
 );
 
 drop table if exists station;
 create table if not exists station(
 	id bigint(20) primary key auto_increment,
-	name varchar(255) not null, -- the name of the station such as Beijing
+	name varchar(255) not null -- the name of the station such as Beijing
 );
 
 drop table if exists schedule;
@@ -41,7 +43,7 @@ drop table if exists seat;
 create table if not exists seat(
 	id bigint(20) primary key auto_increment,
 	name varchar(255) not null, -- the name of the seat such as A21
-	train_id bigint(20) not null,
+	train_id bigint(20) not null
 );
 
 drop table if exists ticket;
