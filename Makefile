@@ -18,13 +18,13 @@ ${CLIENT_ROOT}/client_core.o : ${CLIENT_ROOT}/client_core.c client_server.h
 
 # server part
 ${SERVER_ROOT}/server : ${SERVER_ROOT}/server.o ${SERVER_ROOT}/server_connection.o ${SERVER_ROOT}/server_core.o client_server.o
-	gcc -Wall -o ${SERVER_ROOT}/server ${SERVER_ROOT}/server.o ${SERVER_ROOT}/server_connection.o ${SERVER_ROOT}/server_core.o client_server.o
+	gcc -Wall -o ${SERVER_ROOT}/server ${SERVER_ROOT}/server.o ${SERVER_ROOT}/server_connection.o ${SERVER_ROOT}/server_core.o client_server.o -L/usr/lib/mysql -lmysqlclient
 ${SERVER_ROOT}/server.o : ${SERVER_ROOT}/server.c ${SERVER_ROOT}/server.h client_server.h
 	gcc -Wall -o ${SERVER_ROOT}/server.o -c ${SERVER_ROOT}/server.c ${DEBUG}
 ${SERVER_ROOT}/server_connection.o : ${SERVER_ROOT}/server_connection.c client_server.h
 	gcc -Wall -o ${SERVER_ROOT}/server_connection.o -c ${SERVER_ROOT}/server_connection.c ${DEBUG}
 ${SERVER_ROOT}/server_core.o : ${SERVER_ROOT}/server_core.c client_server.h
-	gcc -Wall -o ${SERVER_ROOT}/server_core.o -c ${SERVER_ROOT}/server_core.c ${DEBUG}
+	gcc -Wall -o ${SERVER_ROOT}/server_core.o -c ${SERVER_ROOT}/server_core.c -I/usr/include/mysql ${DEBUG}
 
 
 # common part

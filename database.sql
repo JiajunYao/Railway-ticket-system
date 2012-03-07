@@ -1,6 +1,7 @@
 
 set storage_engine = InnoDB;
 
+drop database if exists railway_ticket_system;
 create database if not exists railway_ticket_system;
 
 use railway_ticket_system;
@@ -10,7 +11,8 @@ create table if not exists client(
 	id bigint(20) primary key auto_increment,
 	name varchar(255) not null,
 	password varchar(512) not null,
-	register_time timestamp default current_timestamp
+	register_time timestamp default current_timestamp,
+	unique(name)
 );
 
 
@@ -19,13 +21,15 @@ create table if not exists train(
 	id bigint(20) primary key auto_increment,
 	name varchar(255) not null, -- the name of the train such as G7095
 	departure_time timestamp not null, -- the most recent departure time from the initiaing station
-	cycle_time integer(10) not null -- the interval between two adjacent departures
+	cycle_time integer(10) not null, -- the interval between two adjacent departures
+	unique(name)
 );
 
 drop table if exists station;
 create table if not exists station(
 	id bigint(20) primary key auto_increment,
-	name varchar(255) not null -- the name of the station such as Beijing
+	name varchar(255) not null, -- the name of the station such as Beijing
+	unique(name)
 );
 
 drop table if exists schedule;
@@ -64,3 +68,6 @@ create table if not exists ticket(
 	foreign key (start_station_id) references station(id),
 	foreign key (end_station_id) references station(id)
 );
+
+-- create user if not exist
+grant all on railway_ticket_system.* to 'manager'@'localhost' identified by 'manager';
