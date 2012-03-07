@@ -340,10 +340,22 @@ void get_passwd(char* passwd, int max_length, int start_y, int start_x)
 			passwd[i] = '\0';
 			break;
 		}
-		move(start_y, start_x + i);
-		addch('*');
+		else if(passwd[i] == 127 || passwd[i] == 8)
+		{
+			if(i != 0)
+			{
+				i--;
+				move(start_y, start_x + i);
+				delch();
+			}
+		}
+		else
+		{
+			move(start_y, start_x + i);
+			addch('*');
+			i++;
+		}
 		refresh();
-		i++;
 	}
 	passwd[max_length - 1] = '\0'; // defensive
 	echo();

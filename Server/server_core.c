@@ -137,6 +137,7 @@ int handle_login_request()
 				}
 			}
 		}
+		mysql_free_result(res_set);
     }
 
 	// send response
