@@ -11,8 +11,10 @@ static FILE* read_file;
 static FILE* write_file;
 static long int current_client_id;
 static MYSQL* db_conn;
+static char content[BUFFER_SIZE];
 
 int handle_register_request();
+int handle_login_request();
 void print_mysql_error(MYSQL* conn, char* message);
 
 int run_server_core(FILE* read, FILE* write)
@@ -37,7 +39,6 @@ int run_server_core(FILE* read, FILE* write)
 	}
 
 	int request;
-	char content[BUFFER_SIZE];
 	do
 	{	
 		errno = 0;
@@ -64,6 +65,13 @@ int run_server_core(FILE* read, FILE* write)
 					return -1;
 				}
 				break;
+			case LOGIN_REQUEST:
+				if(handle_login_request() == -1)
+				{
+					fprintf(stderr, "handle login request error\n");
+					return -1;
+				}
+				break;
 			default:
 				fprintf(stderr, "unknown request: %d\n", request);
 				return -1;
@@ -74,13 +82,76 @@ int run_server_core(FILE* read, FILE* write)
 	return 0;
 }
 
+int handle_login_request()
+{
+	#ifdef __DEBUG__
+	printf("handle login request\n");
+	#endif
+	char name[MAX_STRING];
+	char passwd[MAX_STRING];
+	int login_result;
+
+	if(fgets(name, sizeof(name), read_file) == NULL)
+	{
+		fprintf(stderr, "can't get user name\n");
+		return -1;
+	}
+	if(fgets(passwd, sizeof(passwd), read_file) == NULL)
+	{
+		fprintf(stderr, "can't get user password\n");
+		return -1;
+	}
+
+	MYSQL_RES* res_set;
+	MYSQL_ROW row;
+	snprintf(content, sizeof(content), "SELECT password FROM client WHERE name = '%s'", name);
+	if(mysql_query(db_conn, content) != 0)
+	{
+		print_mysql_error(db_conn, "can't retrieve user password");
+		return -1;
+	}
+	else
+	{
+		res_set = mysql_store_result(db_conn);
+		if(res_set == NULL)
+		{
+			print_mysql_error(db_conn, "mysql_store_result() failed");
+			login_result = FAILURE;
+		}
+		else
+		{
+			if(mysql_num_rows(res_set) == 0)
+			{
+				login_result = FAILURE;
+			}
+			else
+			{
+				row = mysql_fetch_row(res_set);
+				if(strcmp(passwd, row[0]) == 0)
+				{
+					login_result = SUCCESS;
+				}
+				else
+				{
+					login_result = FAILURE;
+				}
+			}
+		}
+    }
+
+	// send response
+	snprintf(content, sizeof(content), "%d\n%d\n", LOGIN_RESPONSE, login_result);
+	Write(fileno(write_file), content, sizeof(char) * strlen(content));
+
+	return 0;
+}
+
 int handle_register_request()
 {
 
 	#ifdef __DEBUG__
 	printf("handle register request\n");
 	#endif
-	char content[BUFFER_SIZE];
 	char name[MAX_STRING];
 	char passwd[MAX_STRING];
 	int  register_result;

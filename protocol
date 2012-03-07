@@ -11,4 +11,25 @@ ESTABLISH_CONNECTION_RESPONSE
 
 
 ###############
+REGISTER_REQUEST
+%d\n%s\n%s\n message_type name password
+###############
 
+
+###############
+REGISTER_RESPONSE
+%d\n%d\n message_type success_or_failure
+###############
+
+
+
+###############
+LOGIN_REQUEST
+%d\n%s\n%s\n message_type name password
+###############
+
+
+###############
+LOGIN_RESPONSE
+%d\n%d\n message_type success_or_failure
+###############

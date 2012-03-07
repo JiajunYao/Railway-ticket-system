@@ -5,6 +5,8 @@
 #define LOGIN 1
 #define REGISTER 2
 
+#define ERROR_COLOR 1
+
 static FILE* read_file;
 static FILE* write_file;
 
@@ -13,6 +15,7 @@ static char* login_menu[] = {"login", "register", "quit", 0};
 static int login_command[] = {LOGIN, REGISTER, QUIT};
 static char** current_menu = login_menu;
 static int* current_command = login_command;
+static char content[BUFFER_SIZE];
 
 extern int LINES;
 extern int COLS;
@@ -24,6 +27,7 @@ int run_login_module();
 int run_register_module();
 void get_string(char* string, int max_length);
 void get_passwd(char* passwd, int max_length, int start_y, int start_x);
+void show_error(int start_y, int start_x, char* message);
 
 int run_client_core(FILE* read, FILE* write)
 {
@@ -33,6 +37,9 @@ int run_client_core(FILE* read, FILE* write)
 
 	initscr();
 	start_color();
+	// init some color
+	init_pair(ERROR_COLOR, COLOR_RED, COLOR_WHITE);	
+
 	show_welcome_interface();
 	do
 	{
@@ -203,6 +210,7 @@ int run_login_module()
 	char passwd[MAX_STRING]; 
 	char* name_hint = "Enter the user name:   ";
 	char* passwd_hint = "Enter the password:    ";
+	char* name_passwd_invalid = "User name and password are invalid";
 	clear();
 
 	// get user name
@@ -216,6 +224,33 @@ int run_login_module()
 	mvprintw(start_y, start_x, "%s", passwd_hint);
 	get_passwd(passwd, sizeof(passwd), start_y, start_x + strlen(passwd_hint));	
 
+	//verify at server
+	snprintf(content, sizeof(content), "%d\n%s\n%s\n", LOGIN_REQUEST, name, passwd);
+	Write(fileno(write_file), content, sizeof(char) * strlen(content));
+	if(fgets(content, sizeof(content), read_file) == NULL)
+	{
+		fprintf(stderr, "can't get login response\n");
+		return -1;
+	}
+	if(atoi(content) != LOGIN_RESPONSE)
+	{
+		fprintf(stderr, "except login_response but get %s\n", content);
+		return -1;
+	}
+	if(fgets(content, sizeof(content), read_file) == NULL)
+	{
+		return -1;
+	}
+	if(atoi(content) == FAILURE)
+	{
+		start_y = start_y + 2;
+		show_error(start_y, start_x, name_passwd_invalid);
+		sleep(2);
+	}
+	else
+	{
+		// TODO reset menu
+	}
 	return 0;
 }
 
@@ -229,74 +264,57 @@ int run_register_module()
 	char* confirm_passwd_hint = "Enter the password again:  ";
 	char* passwd_not_same = "Passwords are not same";
 	char* user_exist = "This user name is not available";
-	
 	int start_y;
 	int start_x;
-	bool register_success = false;
-	char content[BUFFER_SIZE];	
-	do
-	{
-		clear();
-		// get user name
-		start_y = LINES / 2 - 2;
-		start_x = COLS / 2 - strlen(name_hint);
-		mvprintw(start_y, start_x, "%s", name_hint);
-		get_string(name, sizeof(name));
 
-		// get password
-		start_y = start_y + 2;
-		mvprintw(start_y, start_x, "%s", passwd_hint);
-		get_passwd(passwd, sizeof(passwd), start_y, start_x + strlen(passwd_hint));
+	clear();
+	// get user name
+	start_y = LINES / 2 - 2;
+	start_x = COLS / 2 - strlen(name_hint);
+	mvprintw(start_y, start_x, "%s", name_hint);
+	get_string(name, sizeof(name));
 
-		// get confirm passwd
-		start_y = start_y + 2;
-		mvprintw(start_y, start_x, "%s", confirm_passwd_hint);
-		get_passwd(confirm_passwd, sizeof(confirm_passwd), start_y, start_x + strlen(confirm_passwd_hint));
-		
-		if(strcmp(passwd, confirm_passwd) != 0)
-		{
-			start_y = start_y + 2;
-			init_pair(1, COLOR_RED, COLOR_WHITE);
-			attron(COLOR_PAIR(1));
-			mvprintw(start_y, start_x, "%s", passwd_not_same);
-			refresh();
-			flash();
-			attroff(COLOR_PAIR(1));
-			sleep(2);
-			continue;
-		}
-		
-		// update server
-		snprintf(content, sizeof(content), "%d\n%s\n%s\n", REGISTER_REQUEST, name, passwd);
-		Write(fileno(write_file), content, sizeof(char) * strlen(content));
-		if(fgets(content, sizeof(content), read_file) == NULL)
-		{
-			fprintf(stderr, "can't get register response\n");
-			return -1;
-		}
-		if(atoi(content) != REGISTER_RESPONSE)
-		{
-			return -1;
-		}
-		if(fgets(content, sizeof(content), read_file) == NULL)
-		{
-			return -1;
-		}
-		if(atoi(content) == FAILURE)
-		{
-			start_y = start_y + 2;
-			init_pair(1, COLOR_RED, COLOR_WHITE);
-			attron(COLOR_PAIR(1));
-			mvprintw(start_y, start_x, "%s", user_exist);
-			refresh();
-			flash();
-			attroff(COLOR_PAIR(1));
-			sleep(2);
-			continue;
-		}
-		register_success = true;
-	} while(!register_success);
+	// get password
+	start_y = start_y + 2;
+	mvprintw(start_y, start_x, "%s", passwd_hint);
+	get_passwd(passwd, sizeof(passwd), start_y, start_x + strlen(passwd_hint));
+
+	// get confirm passwd
+	start_y = start_y + 2;
+	mvprintw(start_y, start_x, "%s", confirm_passwd_hint);
+	get_passwd(confirm_passwd, sizeof(confirm_passwd), start_y, start_x + strlen(confirm_passwd_hint));
 	
+	if(strcmp(passwd, confirm_passwd) != 0)
+	{
+		start_y = start_y + 2;
+		show_error(start_y, start_x, passwd_not_same);
+		sleep(2);
+		return 0;
+	}
+	
+	// update server
+	snprintf(content, sizeof(content), "%d\n%s\n%s\n", REGISTER_REQUEST, name, passwd);
+	Write(fileno(write_file), content, sizeof(char) * strlen(content));
+	if(fgets(content, sizeof(content), read_file) == NULL)
+	{
+		fprintf(stderr, "can't get register response\n");
+		return -1;
+	}
+	if(atoi(content) != REGISTER_RESPONSE)
+	{
+		return -1;
+	}
+	if(fgets(content, sizeof(content), read_file) == NULL)
+	{
+		return -1;
+	}
+	if(atoi(content) == FAILURE)
+	{
+		start_y = start_y + 2;
+		show_error(start_y, start_x, user_exist);
+		sleep(2);
+	}
+
 	return 0;
 }
 
@@ -330,4 +348,13 @@ void get_passwd(char* passwd, int max_length, int start_y, int start_x)
 	passwd[max_length - 1] = '\0'; // defensive
 	echo();
 	nocbreak();
+}
+
+void show_error(int start_y, int start_x, char* message)
+{
+	attron(COLOR_PAIR(ERROR_COLOR));
+	mvprintw(start_y, start_x, "%s", message);
+	refresh();
+	flash();
+	attroff(COLOR_PAIR(ERROR_COLOR));
 }

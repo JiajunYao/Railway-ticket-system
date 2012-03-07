@@ -38,6 +38,8 @@
 #define REGISTER_REQUEST 5
 #define REGISTER_RESPONSE 6
 #define FINISH_REQUEST 7
+#define LOGIN_REQUEST 8
+#define LOGIN_RESPONSE 9
 
 char* Fgets(char* s, int size, FILE* stream);
 ssize_t Write(int fd, const void *vptr, size_t n);
