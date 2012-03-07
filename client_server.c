@@ -12,8 +12,9 @@ char* Fgets(char* s, int size, FILE* stream)
 	{
 		return NULL;
 	}
-	else if(fgets_result == NULL && feof(stream))
+	else if(fgets_result == NULL && feof(stream)) // read end is not available
 	{
+		sleep(1);
 		return Fgets(s, size, stream);
 	}
 	else if(fgets_result == NULL && errno == EINTR)

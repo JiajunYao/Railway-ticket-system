@@ -9,16 +9,9 @@ int socket_client_run();
 
 int main()
 {
-	/*--------------------------------------------------
-	* if(fifo_client_run() == -1)
-	* {
-	* 	fprintf(stderr, "client run error\n");
-	* 	exit(-1);
-	* }
-	*--------------------------------------------------*/
-	if(run_client_core(0, 0) == -1)
+	if(fifo_client_run() == -1)
 	{
-		fprintf(stderr, "client core has error\n");
+		fprintf(stderr, "client run error\n");
 		exit(-1);
 	}
 
@@ -34,6 +27,13 @@ int fifo_client_run()
 		fprintf(stderr, "connect_fifo_server has an error\n");
 		return -1;
 	}
+
+	if(run_client_core(read_file, write_file) == -1)
+	{
+		fprintf(stderr, "client core has error\n");
+		exit(-1);
+	}
+
 	if(disconnect_fifo_server(read_file, write_file) == -1)
 	{
 		fprintf(stderr, "disconnect_fifo_server has an error\n");
@@ -52,6 +52,13 @@ int socket_client_run()
 		fprintf(stderr, "connect_socket_server has an error\n");
 		return -1;
 	}
+
+	if(run_client_core(read_file, write_file) == -1)
+	{
+		fprintf(stderr, "client core has error\n");
+		exit(-1);
+	}
+
 	if(disconnect_socket_server(read_file, write_file) == -1)
 	{
 		fprintf(stderr, "disconnect_socket_server has an error\n");

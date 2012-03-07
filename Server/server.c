@@ -45,15 +45,11 @@ int fifo_server_run()
 
 	while(true)
 	{
-		fgets_result = fgets(content, sizeof(content), read_file);
-		if(fgets_result == NULL && !feof(read_file))
+		fgets_result = Fgets(content, sizeof(content), read_file);
+		if(fgets_result == NULL)
 		{
 			fprintf(stderr, "error happens when listening connection\n");
 			return -1;
-		}
-		else if(fgets_result == NULL && feof(read_file))
-		{
-			continue;
 		}
 		else
 		{
@@ -86,6 +82,12 @@ int fifo_server_run()
 				#ifdef __DEBUG__
 				fprintf(stdout, "establish client server fifo connection\n");
 				#endif
+				
+				if(run_server_core(read_file, write_file) == -1)
+				{
+					fprintf(stderr, "server core has error\n");
+					return -1;
+				}
 
 				return 0;
 			}
@@ -147,6 +149,11 @@ int socket_server_run()
 			fprintf(stdout, "establish client server socket connection\n");
 			#endif
 
+			if(run_server_core(read_file, write_file) == -1)
+			{
+				fprintf(stderr, "server core has error\n");
+				return -1;
+			}
 			return 0;
 		}
 

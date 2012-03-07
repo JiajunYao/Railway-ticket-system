@@ -16,6 +16,13 @@ int create_listening_fifo(char* server_public_fifo_name, FILE** read_file)
 		fprintf(stderr, "can't open server public fifo\n");
 		return -1;	
 	}
+
+	// turn off non-blocking mode
+	if(fcntl(server_public_fifo_fd, F_SETFL, fcntl(server_public_fifo_fd, F_GETFL) & ~O_NONBLOCK) == -1)
+	{
+		fprintf(stderr, "can't turn off non-blocking mode for server public fifo\n");
+		return -1;
+	}
 	
 	if((*read_file = fdopen(server_public_fifo_fd, "r")) == NULL)
 	{
@@ -61,6 +68,12 @@ int establish_client_server_fifo_connection(pid_t client_pid, FILE** read_file, 
 	if((server_fifo_fd = open(server_fifo_name, O_RDONLY | O_NONBLOCK)) == -1)
 	{
 		fprintf(stderr, "can't open the server fifo %s\n", server_fifo_name);
+		return -1;
+	}
+	// turn off non-blocking mode
+	if(fcntl(server_fifo_fd, F_SETFL, fcntl(server_fifo_fd, F_GETFL) & ~O_NONBLOCK) == -1)
+	{
+		fprintf(stderr, "can't turn off non-blocking mode for server private fifo\n");
 		return -1;
 	}
 	if((*read_file = fdopen(server_fifo_fd, "r")) == NULL)

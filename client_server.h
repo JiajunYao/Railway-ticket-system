@@ -23,6 +23,7 @@
 #include <arpa/inet.h>
 
 #define BUFFER_SIZE 1024
+#define MAX_STRING 256
 #define SERVER_PORT 5001
 #define LISTEN_BACKLOG 50
 #define SERVER_IP_ADDRESS "127.0.0.1"
@@ -36,6 +37,7 @@
 #define ESTABLISH_CONNECTION_ACK 4
 #define REGISTER_REQUEST 5
 #define REGISTER_RESPONSE 6
+#define FINISH_REQUEST 7
 
 char* Fgets(char* s, int size, FILE* stream);
 ssize_t Write(int fd, const void *vptr, size_t n);

@@ -41,6 +41,14 @@ int connect_fifo_server(char* server_public_fifo_name, FILE** read_file, FILE** 
 		fprintf(stderr, "sorry can't open the client fifo %s\n", client_fifo_name);
 		return -1;
 	}
+
+	// turn off non-blocking mode
+	if(fcntl(client_fifo_fd, F_SETFL, fcntl(client_fifo_fd, F_GETFL) & ~O_NONBLOCK) == -1)
+	{
+		fprintf(stderr, "can't turn off non-blocking mode for client fifo\n");
+		return -1;
+	}
+	 
 	*read_file = fdopen(client_fifo_fd, "r");
 	if(*read_file == NULL)
 	{
