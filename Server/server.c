@@ -10,7 +10,7 @@ void sig_chld(int signo);
 
 int main()
 {
-	if(socket_server_run() == -1)
+	if(fifo_server_run() == -1)
 	{
 		fprintf(stderr, "server has error\n");
 		return -1;
@@ -88,6 +88,19 @@ int fifo_server_run()
 					fprintf(stderr, "server core has error\n");
 					return -1;
 				}
+				
+				
+				// disconnect client
+				if(fclose(write_file) == EOF)
+				{
+					fprintf(stderr, "close the write file occurs an error\n");
+					return -1;
+				}
+				if(fclose(read_file) == EOF)
+				{
+					fprintf(stderr, "close the read file occurs an error\n");
+					return -1;
+				}
 
 				return 0;
 			}
@@ -154,6 +167,14 @@ int socket_server_run()
 				fprintf(stderr, "server core has error\n");
 				return -1;
 			}
+			
+			//disconnect client socket is duplex, so read_file and write_file is the same file
+			if(fclose(read_file) == EOF)
+			{
+				fprintf(stderr, "close the read file occurs an error\n");
+				return -1;
+			}
+
 			return 0;
 		}
 

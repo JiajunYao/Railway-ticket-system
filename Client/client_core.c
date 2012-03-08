@@ -23,6 +23,7 @@ extern int COLS;
 void show_welcome_interface();
 int getchoice(char* greet, char* choices[], int commands[]);
 void draw_menu(char* options[], int current_highlight, int start_y, int start_x);
+int run_quit_module();
 int run_login_module();
 int run_register_module();
 void get_string(char* string, int max_length);
@@ -49,6 +50,11 @@ int run_client_core(FILE* read, FILE* write)
 		switch (choice)
 		{
 			case QUIT:
+				if(run_quit_module() == -1)
+				{
+					fprintf(stderr, "quit module has error\n");
+					client_core_result = -1;
+				}
 				break;
 			case LOGIN:
 				if(run_login_module() == -1)
@@ -206,6 +212,25 @@ void draw_menu(char* options[], int current_highlight, int start_y, int start_x)
 	refresh();
 }
 
+int run_quit_module()
+{
+	// notify the server
+	snprintf(content, sizeof(content), "%d\n", FINISH_REQUEST);
+	Write(fileno(write_file), content, sizeof(char) * strlen(content));
+	if(fgets(content, sizeof(content), read_file) == NULL)
+	{
+		fprintf(stderr, "can't get server quit ack\n");
+		return -1;
+	}
+	if(atoi(content) != FINISH_ACK)
+	{
+		fprintf(stderr, "expect quit_ack but get %s\n", content);
+		return -1;
+	}
+
+	return 0;
+}
+
 int run_login_module()
 {
 	char name[MAX_STRING];
@@ -236,7 +261,7 @@ int run_login_module()
 	}
 	if(atoi(content) != LOGIN_RESPONSE)
 	{
-		fprintf(stderr, "except login_response but get %s\n", content);
+		fprintf(stderr, "expect login_response but get %s\n", content);
 		return -1;
 	}
 	if(fgets(content, sizeof(content), read_file) == NULL)

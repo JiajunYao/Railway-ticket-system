@@ -13,6 +13,7 @@ static long int current_client_id;
 static MYSQL* db_conn;
 static char content[BUFFER_SIZE];
 
+int handle_finish_request();
 int handle_register_request();
 int handle_login_request();
 void print_mysql_error(MYSQL* conn, char* message);
@@ -58,6 +59,13 @@ int run_server_core(FILE* read, FILE* write)
 		request = atoi(content);
 		switch (request)
 		{
+			case FINISH_REQUEST:
+				if(handle_finish_request() == -1)
+				{
+					fprintf(stderr, "handle finish request error\n");
+					return -1;
+				}
+				break;
 			case REGISTER_REQUEST:
 				if(handle_register_request() == -1)
 				{
@@ -79,6 +87,17 @@ int run_server_core(FILE* read, FILE* write)
 	} while(request != FINISH_REQUEST);
 
 	mysql_close(db_conn);
+	return 0;
+}
+
+int handle_finish_request()
+{
+	#ifdef __DEBUG__
+	printf("handle finish request\n");
+	#endif
+	snprintf(content, sizeof(content), "%d\n", FINISH_ACK);
+	Write(fileno(write_file), content, sizeof(char) * strlen(content));
+
 	return 0;
 }
 
