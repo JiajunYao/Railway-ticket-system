@@ -96,11 +96,14 @@ int handle_login_request()
 		fprintf(stderr, "can't get user name\n");
 		return -1;
 	}
+	name[strlen(name) - 1] = '\0'; // remove the line break;
+
 	if(fgets(passwd, sizeof(passwd), read_file) == NULL)
 	{
 		fprintf(stderr, "can't get user password\n");
 		return -1;
 	}
+	passwd[strlen(passwd) - 1] = '\0';
 
 	MYSQL_RES* res_set;
 	MYSQL_ROW row;
@@ -162,12 +165,15 @@ int handle_register_request()
 		fprintf(stderr, "can't get user name\n");
 		return -1;
 	}
+	name[strlen(name) - 1] = '\0';
+
 	if(fgets(passwd, sizeof(passwd), read_file) == NULL)
 	{
 		fprintf(stderr, "can't get user password\n");
 		return -1;
 	}
-	
+	passwd[strlen(passwd) - 1] = '\0';
+
 	snprintf(content, sizeof(content), "INSERT INTO client (name, password) VALUES ('%s', '%s')", name, passwd);
 	if(mysql_query(db_conn, content) != 0)
 	{

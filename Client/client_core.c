@@ -35,6 +35,8 @@ int run_client_core(FILE* read, FILE* write)
 	read_file = read;
 	write_file = write;
 
+	int client_core_result = 0;
+
 	initscr();
 	start_color();
 	// init some color
@@ -52,22 +54,22 @@ int run_client_core(FILE* read, FILE* write)
 				if(run_login_module() == -1)
 				{
 					fprintf(stderr, "login module has error\n");
-					return -1;
+					client_core_result = -1;
 				}
 				break;
 			case REGISTER:
 				if(run_register_module() == -1)
 				{
 					fprintf(stderr, "register module has error\n");
-					return -1;
+					client_core_result = -1;
 				}
 				break;
 		}
-	} while (choice != QUIT);
+	} while (choice != QUIT && client_core_result != -1);
 
 	endwin();
 
-	return 0;
+	return client_core_result;
 }
 
 void show_welcome_interface()
@@ -218,7 +220,7 @@ int run_login_module()
 	int start_x = COLS / 2 - strlen(name_hint);
 	mvprintw(start_y, start_x, "%s", name_hint);
 	get_string(name, MAX_STRING);
-	
+
 	// get password
 	start_y = start_y + 2;
 	mvprintw(start_y, start_x, "%s", passwd_hint);

@@ -9,7 +9,7 @@ int socket_client_run();
 
 int main()
 {
-	if(fifo_client_run() == -1)
+	if(socket_client_run() == -1)
 	{
 		fprintf(stderr, "client run error\n");
 		exit(-1);

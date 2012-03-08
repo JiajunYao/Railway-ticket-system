@@ -21,7 +21,7 @@ create table if not exists train(
 	id bigint(20) primary key auto_increment,
 	name varchar(255) not null, -- the name of the train such as G7095
 	departure_time timestamp not null, -- the most recent departure time from the initiaing station
-	cycle_time integer(10) not null, -- the interval between two adjacent departures
+	cycle_time integer(10) not null, -- the interval days between two adjacent departures
 	unique(name)
 );
 
@@ -71,3 +71,61 @@ create table if not exists ticket(
 
 -- create user if not exist
 grant all on railway_ticket_system.* to 'manager'@'localhost' identified by 'manager';
+
+-- add some data
+insert into client (name, password) values ('client', 'client');
+insert into client (name, password) values ('manager', 'manager');
+
+insert into train (name, departure_time, cycle_time) values ('G7059', '2012-03-08 09:00:00', 1); -- id should be 1
+insert into train (name, departure_time, cycle_time) values ('T730', '2012-03-08 07:00:00', 5); -- id should be 2
+
+insert into station (name) values ('Nanjing'); -- id should be 1
+insert into station (name) values ('Changzhou');
+insert into station (name) values ('Wuxi');
+insert into station (name) values ('Suzhou');
+insert into station (name) values ('Shanghai');
+
+insert into station (name) values ('Xuzhou');
+insert into station (name) values ('Jinan');
+insert into station (name) values ('Tianjin');
+insert into station (name) values ('Beijing');
+
+-- Nanjing -> Changzhou -> Wuxi -> Suzhou -> Shanghai
+insert into schedule (train_id, station_id, cost_time, cost_money) values (1, 1, 0, 0);
+insert into schedule (train_id, station_id, cost_time, cost_money) values (1, 2, 60, 60);
+insert into schedule (train_id, station_id, cost_time, cost_money) values (1, 3, 90, 90);
+insert into schedule (train_id, station_id, cost_time, cost_money) values (1, 4, 120, 120);
+insert into schedule (train_id, station_id, cost_time, cost_money) values (1, 5, 150, 150);
+
+-- Shanghai -> Suzhou -> Wuxi -> Nanjing -> Xuzhou -> Jinan -> Tianjin -> Beijing
+insert into schedule (train_id, station_id, cost_time, cost_money) values (2, 5, 0, 0);
+insert into schedule (train_id, station_id, cost_time, cost_money) values (2, 4, 30, 30);
+insert into schedule (train_id, station_id, cost_time, cost_money) values (2, 3, 60, 60);
+insert into schedule (train_id, station_id, cost_time, cost_money) values (2, 1, 90, 90);
+insert into schedule (train_id, station_id, cost_time, cost_money) values (2, 6, 120, 120);
+insert into schedule (train_id, station_id, cost_time, cost_money) values (2, 7, 150, 150);
+insert into schedule (train_id, station_id, cost_time, cost_money) values (2, 8, 180, 180);
+insert into schedule (train_id, station_id, cost_time, cost_money) values (2, 9, 210, 210);
+
+insert into seat (name, train_id) values ('G1', 1);
+insert into seat (name, train_id) values ('G2', 1);
+insert into seat (name, train_id) values ('G3', 1);
+insert into seat (name, train_id) values ('G4', 1);
+insert into seat (name, train_id) values ('G5', 1);
+insert into seat (name, train_id) values ('G6', 1);
+insert into seat (name, train_id) values ('G7', 1);
+insert into seat (name, train_id) values ('G8', 1);
+insert into seat (name, train_id) values ('G9', 1);
+insert into seat (name, train_id) values ('G10', 1);
+
+insert into seat (name, train_id) values ('T1', 2);
+insert into seat (name, train_id) values ('T2', 2);
+insert into seat (name, train_id) values ('T3', 2);
+insert into seat (name, train_id) values ('T4', 2);
+insert into seat (name, train_id) values ('T5', 2);
+insert into seat (name, train_id) values ('T6', 2);
+insert into seat (name, train_id) values ('T7', 2);
+insert into seat (name, train_id) values ('T8', 2);
+insert into seat (name, train_id) values ('T9', 2);
+insert into seat (name, train_id) values ('T10', 2);
+
