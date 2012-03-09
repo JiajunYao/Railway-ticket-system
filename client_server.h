@@ -41,6 +41,20 @@
 #define FINISH_ACK 10
 #define LOGIN_REQUEST 8
 #define LOGIN_RESPONSE 9
+#define QUERY_BY_STATION_REQUEST 10
+#define QUERY_BY_STATION_RESPONSE 11
+#define ORDER_REQUEST 12
+#define ORDER_RESPONSE 13
+
+typedef struct
+{
+	char train_name[MAX_STRING];
+	char start_station[MAX_STRING];
+	char end_station[MAX_STRING];
+	char start_time[MAX_STRING];
+	char end_time[MAX_STRING];
+	int money;
+}query_by_station_result;
 
 char* Fgets(char* s, int size, FILE* stream);
 ssize_t Write(int fd, const void *vptr, size_t n);

@@ -33,3 +33,15 @@ LOGIN_REQUEST
 LOGIN_RESPONSE
 %d\n%d\n message_type success_or_failure
 ###############
+
+
+###############
+QUERY_BY_STATION_REQUEST
+%d\n%s\n%s\n message_type start_station end_station
+###############
+
+
+###############
+QUERY_BY_STATION_RESPONSE
+%d\n%d\n[%s\n%s\n%s\n%s\n%s\n%d\n]* message_type available_train_number [train_name, start_station, end_station, start_time, end_time, cost_money]*(available_train_number indicates the number of following records)
+###############

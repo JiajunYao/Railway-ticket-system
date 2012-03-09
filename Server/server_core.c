@@ -11,11 +11,16 @@ static FILE* read_file;
 static FILE* write_file;
 static long int current_client_id;
 static MYSQL* db_conn;
+static MYSQL_RES* res_set;
+static MYSQL_ROW row;
 static char content[BUFFER_SIZE];
 
 int handle_finish_request();
 int handle_register_request();
 int handle_login_request();
+int handle_query_by_station_request();
+int handle_order_request();
+
 void print_mysql_error(MYSQL* conn, char* message);
 
 int run_server_core(FILE* read, FILE* write)
@@ -80,6 +85,20 @@ int run_server_core(FILE* read, FILE* write)
 					return -1;
 				}
 				break;
+			case QUERY_BY_STATION_REQUEST:
+				if(handle_query_by_station_request() == -1)
+				{
+					fprintf(stderr, "handle query by station request error\n");
+					return -1;
+				}
+				break;
+			case ORDER_REQUEST:
+				if(handle_order_request() == -1)
+				{
+					fprintf(stderr, "handle order request error\n");
+					return -1;
+				}
+				break;
 			default:
 				fprintf(stderr, "unknown request: %d\n", request);
 				return -1;
@@ -124,9 +143,7 @@ int handle_login_request()
 	}
 	passwd[strlen(passwd) - 1] = '\0';
 
-	MYSQL_RES* res_set;
-	MYSQL_ROW row;
-	snprintf(content, sizeof(content), "SELECT password FROM client WHERE name = '%s'", name);
+	snprintf(content, sizeof(content), "SELECT id, password FROM client WHERE name = '%s'", name);
 	if(mysql_query(db_conn, content) != 0)
 	{
 		print_mysql_error(db_conn, "can't retrieve user password");
@@ -149,9 +166,11 @@ int handle_login_request()
 			else
 			{
 				row = mysql_fetch_row(res_set);
-				if(strcmp(passwd, row[0]) == 0)
+				if(strcmp(passwd, row[1]) == 0)
 				{
 					login_result = SUCCESS;
+					//record current user
+					current_client_id = atoi(row[0]);
 				}
 				else
 				{
@@ -209,6 +228,73 @@ int handle_register_request()
 	Write(fileno(write_file), content, sizeof(char) * strlen(content));
 
 	return 0;
+}
+
+int handle_query_by_station_request()
+{
+
+	#ifdef __DEBUG__
+	printf("handle query by station request\n");
+	#endif
+	char start_station[MAX_STRING];
+	char end_station[MAX_STRING];
+
+	if(fgets(start_station, sizeof(start_station), read_file) == NULL)
+	{
+		fprintf(stderr, "can't get start station\n");
+		return -1;
+	}
+	start_station[strlen(start_station) - 1] = '\0';
+
+	if(fgets(end_station, sizeof(end_station), read_file) == NULL)
+	{
+		fprintf(stderr, "can't get end station\n");
+		return -1;
+	}
+	end_station[strlen(end_station) - 1] = '\0';
+	
+	snprintf(content, sizeof(content), "SELECT t.name, sta1.name, sta2.name, ADDTIME(t.departure_time, SEC_TO_TIME(sch1.cost_time * 60)), ADDTIME(t.departure_time, SEC_TO_TIME(sch2.cost_time * 60)), sch2.cost_money - sch1.cost_money FROM schedule sch1, schedule sch2, station sta1, station sta2, train t WHERE sch1.train_id = sch2.train_id AND sch1.train_id = t.id AND sch1.station_id = sta1.id AND sch2.station_id = sta2.id AND sch1.cost_time < sch2.cost_time AND sta1.name = '%s' AND sta2.name = '%s'", start_station, end_station);
+
+	if(mysql_query(db_conn, content) != 0)
+	{
+		print_mysql_error(db_conn, "can't retrieve satisfied train");
+		return -1;
+	}
+	else
+	{
+		res_set = mysql_store_result(db_conn);
+		if(res_set == NULL)
+		{
+			print_mysql_error(db_conn, "mysql_store_result() failed");
+			return -1;
+		}
+		else
+		{
+			int result_number = mysql_num_rows(res_set);
+
+			snprintf(content, sizeof(content), "%d\n%d\n", QUERY_BY_STATION_RESPONSE, result_number);
+			Write(fileno(write_file), content, sizeof(char) * strlen(content));
+
+			int i;
+			for(i = 0; i < result_number; i++)
+			{
+				row = mysql_fetch_row(res_set);
+				snprintf(content, sizeof(content), "%s\n%s\n%s\n%s\n%s\n\%s\n", row[0], row[1], row[2], row[3], row[4], row[5]);
+				Write(fileno(write_file), content, sizeof(char) * strlen(content));
+			}
+		}
+	}
+
+	return 0;
+}
+
+int handle_order_request()
+{
+	#ifdef __DEBUG__
+	printf("handle query by station request\n");
+	#endif
+
+
 }
 
 // this function is a facility
