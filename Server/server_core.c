@@ -223,6 +223,7 @@ int handle_register_request()
 		register_result = SUCCESS;
 	}
 
+	mysql_free_result(res_set);
 	// send response
 	snprintf(content, sizeof(content), "%d\n%d\n", REGISTER_RESPONSE, register_result);
 	Write(fileno(write_file), content, sizeof(char) * strlen(content));
@@ -253,7 +254,7 @@ int handle_query_by_station_request()
 	}
 	end_station[strlen(end_station) - 1] = '\0';
 	
-	snprintf(content, sizeof(content), "SELECT t.name, sta1.name, sta2.name, ADDTIME(t.departure_time, SEC_TO_TIME(sch1.cost_time * 60)), ADDTIME(t.departure_time, SEC_TO_TIME(sch2.cost_time * 60)), sch2.cost_money - sch1.cost_money FROM schedule sch1, schedule sch2, station sta1, station sta2, train t WHERE sch1.train_id = sch2.train_id AND sch1.train_id = t.id AND sch1.station_id = sta1.id AND sch2.station_id = sta2.id AND sch1.cost_time < sch2.cost_time AND sta1.name = '%s' AND sta2.name = '%s'", start_station, end_station);
+	snprintf(content, sizeof(content), "SELECT t.name, sta1.name, sta2.name, ADDTIME(t.departure_time, SEC_TO_TIME(sch1.cost_time * 60)), sch2.cost_time - sch1.cost_time, sch2.cost_money - sch1.cost_money FROM schedule sch1, schedule sch2, station sta1, station sta2, train t WHERE sch1.train_id = sch2.train_id AND sch1.train_id = t.id AND sch1.station_id = sta1.id AND sch2.station_id = sta2.id AND sch1.cost_time < sch2.cost_time AND sta1.name = '%s' AND sta2.name = '%s'", start_station, end_station);
 
 	if(mysql_query(db_conn, content) != 0)
 	{
@@ -283,18 +284,148 @@ int handle_query_by_station_request()
 				Write(fileno(write_file), content, sizeof(char) * strlen(content));
 			}
 		}
+		mysql_free_result(res_set);
 	}
-
+	
 	return 0;
 }
 
 int handle_order_request()
 {
 	#ifdef __DEBUG__
-	printf("handle query by station request\n");
+	printf("handle order request\n");
 	#endif
+	char train_name[MAX_STRING];
+	char start_station[MAX_STRING];
+	char end_station[MAX_STRING];
+	char departure_time_str[MAX_STRING];
+	char arrival_time_str[MAX_STRING];
+	int  ticket_number;
+	int  ticket_money;
+	long int train_id;
+	long int start_station_id;
+	long int end_station_id;
 
+	fgets(train_name, sizeof(train_name), read_file);
+	train_name[strlen(train_name) - 1] = '\0';
 
+	fgets(start_station, sizeof(start_station), read_file);
+	start_station[strlen(start_station) - 1] = '\0';
+
+	fgets(end_station, sizeof(end_station), read_file);
+	end_station[strlen(end_station) - 1] = '\0';
+
+	fgets(departure_time_str, sizeof(departure_time_str), read_file);
+	departure_time_str[strlen(departure_time_str) - 1] = '\0';
+
+	fgets(arrival_time_str, sizeof(arrival_time_str), read_file);
+	arrival_time_str[strlen(arrival_time_str) - 1] = '\0';
+
+	ticket_number = atoi(fgets(content, sizeof(content), read_file));
+	ticket_money = atoi(fgets(content, sizeof(content), read_file));
+
+	/* the algorithm to find the available seats: first find never booked seats then try to reuse booked seats */
+	// get train id
+	snprintf(content, sizeof(content), "SELECT id FROM train WHERE name = '%s'", train_name);
+	if(mysql_query(db_conn, content) != 0)
+	{
+		print_mysql_error(db_conn, "can't get train id");
+		return -1;
+	}
+	else
+	{
+		res_set = mysql_store_result(db_conn);
+		if(res_set == NULL)
+		{
+			print_mysql_error(db_conn, "mysql_store_result() failed");
+			return -1;
+		}
+		row = mysql_fetch_row(res_set);
+		train_id = atoi(row[0]);
+		mysql_free_result(res_set);
+	}
+
+	// get start station id
+	snprintf(content, sizeof(content), "SELECT id FROM station WHERE name = '%s'", start_station);
+	if(mysql_query(db_conn, content) != 0)
+	{
+		print_mysql_error(db_conn, "can't get start station id");
+		return -1;
+	}
+	else
+	{
+		res_set = mysql_store_result(db_conn);
+		if(res_set == NULL)
+		{
+			print_mysql_error(db_conn, "mysql_store_result() failed");
+			return -1;
+		}
+		row = mysql_fetch_row(res_set);
+		start_station_id = atoi(row[0]);
+		mysql_free_result(res_set);
+	}
+
+	// get end station id
+	snprintf(content, sizeof(content), "SELECT id FROM station WHERE name = '%s'", end_station);
+	if(mysql_query(db_conn, content) != 0)
+	{
+		print_mysql_error(db_conn, "can't get end station id");
+		return -1;
+	}
+	else
+	{
+		res_set = mysql_store_result(db_conn);
+		if(res_set == NULL)
+		{
+			print_mysql_error(db_conn, "mysql_store_result() failed");
+			return -1;
+		}
+		row = mysql_fetch_row(res_set);
+		end_station_id = atoi(row[0]);
+		mysql_free_result(res_set);
+	}
+
+	snprintf(content, sizeof(content), "SELECT id, name FROM seat WHERE train_id = %ld AND id NOT IN (SELECT seat_id FROM ticket WHERE train_id = %ld AND ((departure_time >= '%s' AND departure_time < '%s') OR (arrival_time > '%s' AND arrival_time <= '%s')))", train_id, train_id, departure_time_str, arrival_time_str, departure_time_str, arrival_time_str);	
+	if(mysql_query(db_conn, content) != 0)
+	{
+		print_mysql_error(db_conn, "can't get available seats");
+		return -1;
+	}
+	else
+	{
+		res_set = mysql_store_result(db_conn);
+		
+		int result_number = mysql_num_rows(res_set);
+		if(result_number <  ticket_number)
+		{
+			// no available seats
+			snprintf(content, sizeof(content), "%d\n%d\n", ORDER_RESPONSE, FAILURE);
+			Write(fileno(write_file), content, sizeof(char) * strlen(content));
+		}
+		else
+		{
+			snprintf(content, sizeof(content), "%d\n%d\n", ORDER_RESPONSE, SUCCESS);
+			Write(fileno(write_file), content, sizeof(char) * strlen(content));
+			
+			int i;
+			long int seat_id;
+			for(i = 0; i < ticket_number; i++)
+			{
+				row = mysql_fetch_row(res_set);
+				seat_id = atoi(row[0]);
+				snprintf(content, sizeof(content), "INSERT INTO ticket (client_id, train_id, seat_id, start_station_id, end_station_id, departure_time, arrival_time, price) VALUES (%ld, %ld, %ld, %ld, %ld, '%s', '%s', %d)", current_client_id, train_id, seat_id, start_station_id, end_station_id, departure_time_str, arrival_time_str, ticket_money);
+				if(mysql_query(db_conn, content) != 0)
+				{
+					print_mysql_error(db_conn, "can't insert ticket");
+				}
+				snprintf(content, sizeof(content), "%s\n", row[1]);
+				Write(fileno(write_file), content, sizeof(char) * strlen(content));
+			}
+		}
+		mysql_free_result(res_set);
+	}
+
+	return 0;
 }
 
 // this function is a facility

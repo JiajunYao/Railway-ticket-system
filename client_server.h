@@ -52,7 +52,7 @@ typedef struct
 	char start_station[MAX_STRING];
 	char end_station[MAX_STRING];
 	char start_time[MAX_STRING];
-	char end_time[MAX_STRING];
+	int cost_time;
 	int money;
 }query_by_station_result;
 
