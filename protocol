@@ -59,3 +59,27 @@ ORDER_RESPONSE
 if(success)
 [%s\n]*(seat name, the number of seat is specified by ticket_number in ORDER_REQUEST)
 ###############
+
+
+###############
+QUERY_BOOKED_TICKET_REQUEST
+%d\n message_type
+###############
+
+
+###############
+QUERY_BOOKED_TICKET_RESPONSE
+%d\n%d\n[%ld\n%s\n%s\n%s\n%s\n]* message_type ticket_number [ticket_id, train_name, start_station, end_station, departure_time]*(ticket_number indicates the number of following records)
+###############
+
+
+###############
+REFUND_REQUEST
+%d\n%ld\n message_type ticket_id
+###############
+
+###############
+REFUND_RESPONSE
+%d\n%d\n message_type refund_success_or_failure
+###############
+

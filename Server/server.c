@@ -10,7 +10,7 @@ void sig_chld(int signo);
 
 int main()
 {
-	if(fifo_server_run() == -1)
+	if(socket_server_run() == -1)
 	{
 		fprintf(stderr, "server has error\n");
 		return -1;

@@ -9,7 +9,7 @@ int socket_client_run();
 
 int main()
 {
-	if(fifo_client_run() == -1)
+	if(socket_client_run() == -1)
 	{
 		fprintf(stderr, "client run error\n");
 		exit(-1);
@@ -47,6 +47,7 @@ int socket_client_run()
 {
 	FILE* read_file;
 	FILE* write_file;
+
 	if(connect_socket_server(SERVER_IP_ADDRESS, SERVER_PORT, &read_file, &write_file) == -1)
 	{
 		fprintf(stderr, "connect_socket_server has an error\n");

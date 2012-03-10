@@ -1,5 +1,5 @@
 /**
- * This file contains wrapper functions in client and server
+ * This file contains wrapper functions and facility functions used  in client and server
  */
 
 #include "client_server.h"
@@ -52,6 +52,11 @@ ssize_t Write(int fd, const void *vptr, size_t n)
 
 	return n;
 }
+
+void remove_ending_line_break(char* string)
+{
+	string[strlen(string) - 1] = '\0';
+}	
 
 int Accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 {

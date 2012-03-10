@@ -13,6 +13,10 @@
 
 #define ERROR_COLOR 1
 
+/* variable declaration */
+extern int LINES;
+extern int COLS;
+
 static FILE* read_file;
 static FILE* write_file;
 
@@ -33,20 +37,20 @@ static int* current_command = login_command;
 
 static char content[BUFFER_SIZE];
 
-extern int LINES;
-extern int COLS;
-
-int getchoice(char* greet, char* choices[], int commands[]);
-void draw_menu(char* options[], int current_highlight, int start_y, int start_x);
+/* function declaration */
 void show_welcome_interface();
 
+// this two functions are facility functions, get user choice by menu
+void draw_menu(char* options[], int current_highlight, int start_y, int start_x);
+int getchoice(char* greet, char* choices[], int commands[]);
+
 int run_quit_module();
-int run_login_module();
-int run_register_module();
 int run_book_module();
+int run_login_module();
 int run_refund_module();
-int run_query_by_station_module();
+int run_register_module();
 int run_query_by_train_module();
+int run_query_by_station_module();
 int run_order_module(char* train_name, char* start_station, char* end_station, char* start_time, int cost_time, int cost_money);
 
 void get_string(char* string, int max_length);
@@ -59,11 +63,11 @@ int run_client_core(FILE* read, FILE* write)
 	read_file = read;
 	write_file = write;
 
-	int client_core_result = 0;
-
+	int client_core_result = 0; // reocrd whether client core succeeds or fails
+	
+	// set up curses
 	initscr();
 	start_color();
-	// init some color
 	init_pair(ERROR_COLOR, COLOR_RED, COLOR_WHITE);	
 
 	show_welcome_interface();
@@ -117,11 +121,15 @@ int run_client_core(FILE* read, FILE* write)
 		}
 	} while (choice != QUIT && client_core_result != -1);
 
+	// clean up curses
 	endwin();
 
 	return client_core_result;
 }
 
+/* 
+ * display a welcome slogan in the middle of the screen
+ */
 void show_welcome_interface()
 {
 	
@@ -229,6 +237,9 @@ int getchoice(char* greet, char* choices[], int commands[])
 	return selected;
 }
 
+/*
+ * this function is also from Beginning Linux Programming and is modified
+ */
 void draw_menu(char* options[], int current_highlight, int start_y, int start_x)
 {
 	int current_row = 0;
@@ -242,7 +253,7 @@ void draw_menu(char* options[], int current_highlight, int start_y, int start_x)
 			attron(A_STANDOUT);
 		}
 		txt_ptr = options[current_row];
-		mvprintw(start_y + current_row, start_x, "%s", txt_ptr);
+		mvprintw(start_y + current_row * 2, start_x, "%s", txt_ptr);
 		if(current_row == current_highlight)
 		{
 			attroff(A_STANDOUT);
@@ -260,6 +271,8 @@ int run_quit_module()
 	// notify the server
 	snprintf(content, sizeof(content), "%d\n", FINISH_REQUEST);
 	Write(fileno(write_file), content, sizeof(char) * strlen(content));
+
+	// get reponse
 	if(fgets(content, sizeof(content), read_file) == NULL)
 	{
 		fprintf(stderr, "can't get server quit ack\n");
@@ -281,6 +294,7 @@ int run_login_module()
 	char* name_hint = "Enter the user name:   ";
 	char* passwd_hint = "Enter the password:    ";
 	char* name_passwd_invalid = "User name and password are invalid";
+
 	clear();
 
 	// get user name
@@ -297,6 +311,8 @@ int run_login_module()
 	//verify at server
 	snprintf(content, sizeof(content), "%d\n%s\n%s\n", LOGIN_REQUEST, name, passwd);
 	Write(fileno(write_file), content, sizeof(char) * strlen(content));
+
+	// get response
 	if(fgets(content, sizeof(content), read_file) == NULL)
 	{
 		fprintf(stderr, "can't get login response\n");
@@ -319,7 +335,7 @@ int run_login_module()
 	}
 	else
 	{
-		// go to the operation interface
+		// set the global current_menu and current_command so we will go to the operation interface
 		current_menu = operation_menu;
 		current_command = operation_command;
 		get_choice_title = "select an operation";
@@ -341,6 +357,7 @@ int run_register_module()
 	int start_x;
 
 	clear();
+
 	// get user name
 	start_y = 0;
 	start_x = 0;
@@ -368,6 +385,8 @@ int run_register_module()
 	// update server
 	snprintf(content, sizeof(content), "%d\n%s\n%s\n", REGISTER_REQUEST, name, passwd);
 	Write(fileno(write_file), content, sizeof(char) * strlen(content));
+
+	// get response
 	if(fgets(content, sizeof(content), read_file) == NULL)
 	{
 		fprintf(stderr, "can't get register response\n");
@@ -393,6 +412,7 @@ int run_register_module()
 
 int run_book_module()
 {
+	// just go to the query mode interface
 	current_menu = query_menu;
 	current_command = query_command;
 	get_choice_title = "select query mode";
@@ -414,6 +434,7 @@ int run_query_by_station_module()
 	int query_result_num;
 
 	clear();
+
 	// get start station
 	start_y = 0;
 	start_x = 0;
@@ -425,7 +446,7 @@ int run_query_by_station_module()
 	mvprintw(start_y, start_x, "%s", end_station_hint);
 	get_string(end_station, sizeof(end_station));
 
-	if(strcmp(start_station, end_station) == 0)
+	if(strcmp(start_station, end_station) == 0) // start_station shouldn't be equal to end_station
 	{
 		start_y = start_y + 2;
 		show_error(start_y, start_x, station_same);
@@ -436,6 +457,8 @@ int run_query_by_station_module()
 	// query server
 	snprintf(content, sizeof(content), "%d\n%s\n%s\n", QUERY_BY_STATION_REQUEST, start_station, end_station);
 	Write(fileno(write_file), content, sizeof(char) * strlen(content));
+
+	// get response
 	if(fgets(content, sizeof(content), read_file) == NULL)
 	{
 		fprintf(stderr, "can't get query_by_station response\n");
@@ -470,16 +493,16 @@ int run_query_by_station_module()
 	{
 		// get train name  and remove the ending line break
 		fgets(query_result_ptr[i].train_name, sizeof(query_result_ptr[i].train_name), read_file);
-		(query_result_ptr[i].train_name)[strlen(query_result_ptr[i].train_name) - 1] = '\0';
+		remove_ending_line_break(query_result_ptr[i].train_name);
 
 		fgets(query_result_ptr[i].start_station, sizeof(query_result_ptr[i].start_station), read_file);	
-		(query_result_ptr[i].start_station)[strlen(query_result_ptr[i].start_station) - 1] = '\0';
+		remove_ending_line_break(query_result_ptr[i].start_station);
 
 		fgets(query_result_ptr[i].end_station, sizeof(query_result_ptr[i].end_station), read_file);
-		(query_result_ptr[i].end_station)[strlen(query_result_ptr[i].end_station) - 1] = '\0';
+		remove_ending_line_break(query_result_ptr[i].end_station);
 
 		fgets(query_result_ptr[i].start_time, sizeof(query_result_ptr[i].start_time), read_file);
-		(query_result_ptr[i].start_time)[strlen(query_result_ptr[i].start_time) - 1] = '\0';
+		remove_ending_line_break(query_result_ptr[i].start_time);
 
 		query_result_ptr[i].cost_time = atoi(fgets(content, sizeof(content), read_file));
 
@@ -487,7 +510,9 @@ int run_query_by_station_module()
 
 		// add a item to menu
 		query_result_select_menu[i] = (char*)malloc(sizeof(char) * BUFFER_SIZE);
-		snprintf(query_result_select_menu[i], BUFFER_SIZE, "Train %s From %s To %s Start Time %s Spend Time %d minutes Money %d", query_result_ptr[i].train_name, query_result_ptr[i].start_station, query_result_ptr[i].end_station, query_result_ptr[i].start_time, query_result_ptr[i].cost_time, query_result_ptr[i].money);
+		snprintf(query_result_select_menu[i], BUFFER_SIZE, "Train %s From %s To %s Start Time %s Spend Time %d minutes Money %d",
+				query_result_ptr[i].train_name, query_result_ptr[i].start_station, query_result_ptr[i].end_station,
+				query_result_ptr[i].start_time, query_result_ptr[i].cost_time, query_result_ptr[i].money);
 
 		// add a item to command
 		query_result_select_command[i] = i;
@@ -497,12 +522,14 @@ int run_query_by_station_module()
 	query_result_select_menu[i] = (char*)malloc(sizeof(char) * MAX_STRING);
 	snprintf(query_result_select_menu[i], MAX_STRING, "<< back");
 	query_result_select_command[i] = i;
-
+	
+	// this choice variable is the local one not the global one
 	int choice = getchoice("select a train", query_result_select_menu, query_result_select_command);
 
 	if(choice < query_result_num) // user select a train not 'back'
 	{
-		if(run_order_module(query_result_ptr[choice].train_name, query_result_ptr[choice].start_station, query_result_ptr[choice].end_station, query_result_ptr[choice].start_time, query_result_ptr[choice].cost_time, query_result_ptr[choice].money) == -1)
+		if(run_order_module(query_result_ptr[choice].train_name, query_result_ptr[choice].start_station, query_result_ptr[choice].end_station,
+							query_result_ptr[choice].start_time, query_result_ptr[choice].cost_time, query_result_ptr[choice].money) == -1)
 		{
 			fprintf(stderr, "run order module has error\n");
 		}
@@ -533,10 +560,12 @@ int run_order_module(char* train_name, char* start_station, char* end_station, c
 	int start_x;
 
 	clear();
+
+	// print summary
 	start_y = 0;
 	start_x = 0;
-	// print summary
-	snprintf(content, sizeof(content), "You take %s From %s To %s start time %s cost time %d minutes cost money %d yuan", train_name, start_station, end_station, start_time, cost_time, cost_money);
+	snprintf(content, sizeof(content), "You take %s From %s To %s start time %s cost time %d minutes cost money %d yuan",
+			train_name, start_station, end_station, start_time, cost_time, cost_money);
 	mvprintw(start_y, start_x, "%s", content);
 	
 	// get ticket number
@@ -590,7 +619,8 @@ int run_order_module(char* train_name, char* start_station, char* end_station, c
 	strftime(arrival_time_str, sizeof(arrival_time_str), "%Y-%m-%d %H:%M:%S", arrival_time_tm_ptr);
 
 	// get confirm
-	snprintf(content, sizeof(content), "Confirm: You want to book %d tickets From %s To %s by %s start_time %s [yes|no]: ", atoi(ticket_number), start_station, end_station, train_name, departure_time_str);
+	snprintf(content, sizeof(content), "Confirm: You want to book %d tickets From %s To %s by %s start_time %s [yes|no]: ",
+			atoi(ticket_number), start_station, end_station, train_name, departure_time_str);
 	start_y = start_y + 2;
 	mvprintw(start_y, start_x, "%s", content);
 	get_string(content, sizeof(content));
@@ -601,8 +631,11 @@ int run_order_module(char* train_name, char* start_station, char* end_station, c
 	}
 
 	// query server
-	snprintf(content, sizeof(content), "%d\n%s\n%s\n%s\n%s\n%s\n%d\n%d\n", ORDER_REQUEST, train_name, start_station, end_station, departure_time_str, arrival_time_str, atoi(ticket_number), cost_money);
+	snprintf(content, sizeof(content), "%d\n%s\n%s\n%s\n%s\n%s\n%d\n%d\n", ORDER_REQUEST, train_name, start_station,
+			end_station, departure_time_str, arrival_time_str, atoi(ticket_number), cost_money);
 	Write(fileno(write_file), content, sizeof(char) * strlen(content));
+
+	//get response
 	if(fgets(content, sizeof(content), read_file) == NULL)
 	{
 		fprintf(stderr, "can't get order response\n");
@@ -632,7 +665,7 @@ int run_order_module(char* train_name, char* start_station, char* end_station, c
 		{
 			start_y = start_y + 1;
 			fgets(content, sizeof(content), read_file);
-			content[strlen(content) - 1] = '\0';
+			remove_ending_line_break(content);
 			mvprintw(start_y, start_x, "Seat Number: %s", content);
 		}
 
@@ -659,6 +692,8 @@ int run_refund_module()
 	// query server, get booked and not expired tickets
 	snprintf(content, sizeof(content), "%d\n", QUERY_BOOKED_TICKET_REQUEST);
 	Write(fileno(write_file), content, sizeof(char) * strlen(content));
+
+	// get response
 	if(fgets(content, sizeof(content), read_file) == NULL)
 	{
 		fprintf(stderr, "can't get query booked ticket response\n");
@@ -688,20 +723,22 @@ int run_refund_module()
 			query_result_ptr[i].ticket_id = atol(fgets(content, sizeof(content), read_file));	
 
 			fgets(query_result_ptr[i].train_name, sizeof(query_result_ptr[i].train_name), read_file);
-			(query_result_ptr[i].train_name)[strlen(query_result_ptr[i].train_name) - 1] = '\0';
+			remove_ending_line_break(query_result_ptr[i].train_name);
 
 			fgets(query_result_ptr[i].start_station, sizeof(query_result_ptr[i].start_station), read_file);	
-			(query_result_ptr[i].start_station)[strlen(query_result_ptr[i].start_station) - 1] = '\0';
+			remove_ending_line_break(query_result_ptr[i].start_station);
 
 			fgets(query_result_ptr[i].end_station, sizeof(query_result_ptr[i].end_station), read_file);
-			(query_result_ptr[i].end_station)[strlen(query_result_ptr[i].end_station) - 1] = '\0';
+			remove_ending_line_break(query_result_ptr[i].end_station);
 
 			fgets(query_result_ptr[i].departure_time, sizeof(query_result_ptr[i].departure_time), read_file);
-			(query_result_ptr[i].departure_time)[strlen(query_result_ptr[i].departure_time) - 1] = '\0';
+			remove_ending_line_break(query_result_ptr[i].departure_time);
 
 			// add a item to menu
 			query_result_select_menu[i] = (char*)malloc(sizeof(char) * BUFFER_SIZE);
-			snprintf(query_result_select_menu[i], BUFFER_SIZE, "Ticket: Train %s From %s To %s Departure Time %s", query_result_ptr[i].train_name, query_result_ptr[i].start_station, query_result_ptr[i].end_station, query_result_ptr[i].departure_time);
+			snprintf(query_result_select_menu[i], BUFFER_SIZE, "Ticket: Train %s From %s To %s Departure Time %s",
+					query_result_ptr[i].train_name, query_result_ptr[i].start_station, query_result_ptr[i].end_station,
+					query_result_ptr[i].departure_time);
 			
 			// add a item to command
 			query_result_select_command[i] = i;
@@ -719,6 +756,8 @@ int run_refund_module()
 			// notify server to refund the ticket
 			snprintf(content, sizeof(content), "%d\n%ld\n", REFUND_REQUEST, query_result_ptr[choice].ticket_id);
 			Write(fileno(write_file), content, sizeof(char) * strlen(content));
+
+			// get response
 			if(fgets(content, sizeof(content), read_file) == NULL)
 			{
 				fprintf(stderr, "can't get refund response\n");

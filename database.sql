@@ -109,22 +109,8 @@ insert into schedule (train_id, station_id, cost_time, cost_money) values (2, 5,
 insert into seat (name, train_id) values ('G1', 1);
 insert into seat (name, train_id) values ('G2', 1);
 insert into seat (name, train_id) values ('G3', 1);
-insert into seat (name, train_id) values ('G4', 1);
-insert into seat (name, train_id) values ('G5', 1);
-insert into seat (name, train_id) values ('G6', 1);
-insert into seat (name, train_id) values ('G7', 1);
-insert into seat (name, train_id) values ('G8', 1);
-insert into seat (name, train_id) values ('G9', 1);
-insert into seat (name, train_id) values ('G10', 1);
 
 insert into seat (name, train_id) values ('T1', 2);
 insert into seat (name, train_id) values ('T2', 2);
 insert into seat (name, train_id) values ('T3', 2);
-insert into seat (name, train_id) values ('T4', 2);
-insert into seat (name, train_id) values ('T5', 2);
-insert into seat (name, train_id) values ('T6', 2);
-insert into seat (name, train_id) values ('T7', 2);
-insert into seat (name, train_id) values ('T8', 2);
-insert into seat (name, train_id) values ('T9', 2);
-insert into seat (name, train_id) values ('T10', 2);
 

@@ -7,21 +7,22 @@
 #define DATABASE_USER_PASSWD "manager"
 #define DATABASE_NAME "railway_ticket_system"
 
+static MYSQL* db_conn;
+static MYSQL_ROW row;
+static MYSQL_RES* res_set;
+
 static FILE* read_file;
 static FILE* write_file;
-static long int current_client_id;
-static MYSQL* db_conn;
-static MYSQL_RES* res_set;
-static MYSQL_ROW row;
 static char content[BUFFER_SIZE];
+static long int current_client_id;
 
 int handle_finish_request();
-int handle_register_request();
 int handle_login_request();
-int handle_query_by_station_request();
 int handle_order_request();
-int handle_query_booked_ticket_request();
 int handle_refund_request();
+int handle_register_request();
+int handle_query_booked_ticket_request();
+int handle_query_by_station_request();
 
 void print_mysql_error(MYSQL* conn, char* message);
 
@@ -49,7 +50,7 @@ int run_server_core(FILE* read, FILE* write)
 	int request;
 	do
 	{	
-		errno = 0;
+		errno = 0; // clear the errno
 		if(fgets(content, sizeof(content), read_file) == NULL)
 		{
 			if(feof(read_file))
@@ -150,14 +151,14 @@ int handle_login_request()
 		fprintf(stderr, "can't get user name\n");
 		return -1;
 	}
-	name[strlen(name) - 1] = '\0'; // remove the line break;
+	remove_ending_line_break(name);
 
 	if(fgets(passwd, sizeof(passwd), read_file) == NULL)
 	{
 		fprintf(stderr, "can't get user password\n");
 		return -1;
 	}
-	passwd[strlen(passwd) - 1] = '\0';
+	remove_ending_line_break(passwd);
 
 	snprintf(content, sizeof(content), "SELECT id, password FROM client WHERE name = '%s'", name);
 	if(mysql_query(db_conn, content) != 0)
@@ -219,14 +220,14 @@ int handle_register_request()
 		fprintf(stderr, "can't get user name\n");
 		return -1;
 	}
-	name[strlen(name) - 1] = '\0';
+	remove_ending_line_break(name);
 
 	if(fgets(passwd, sizeof(passwd), read_file) == NULL)
 	{
 		fprintf(stderr, "can't get user password\n");
 		return -1;
 	}
-	passwd[strlen(passwd) - 1] = '\0';
+	remove_ending_line_break(passwd);
 
 	snprintf(content, sizeof(content), "INSERT INTO client (name, password) VALUES ('%s', '%s')", name, passwd);
 	if(mysql_query(db_conn, content) != 0)
@@ -260,16 +261,21 @@ int handle_query_by_station_request()
 		fprintf(stderr, "can't get start station\n");
 		return -1;
 	}
-	start_station[strlen(start_station) - 1] = '\0';
+	remove_ending_line_break(start_station);
 
 	if(fgets(end_station, sizeof(end_station), read_file) == NULL)
 	{
 		fprintf(stderr, "can't get end station\n");
 		return -1;
 	}
-	end_station[strlen(end_station) - 1] = '\0';
+	remove_ending_line_break(end_station);
 	
-	snprintf(content, sizeof(content), "SELECT t.name, sta1.name, sta2.name, ADDTIME(t.departure_time, SEC_TO_TIME(sch1.cost_time * 60)), sch2.cost_time - sch1.cost_time, sch2.cost_money - sch1.cost_money FROM schedule sch1, schedule sch2, station sta1, station sta2, train t WHERE sch1.train_id = sch2.train_id AND sch1.train_id = t.id AND sch1.station_id = sta1.id AND sch2.station_id = sta2.id AND sch1.cost_time < sch2.cost_time AND sta1.name = '%s' AND sta2.name = '%s'", start_station, end_station);
+	snprintf(content, sizeof(content), "SELECT t.name, sta1.name, sta2.name, ADDTIME(t.departure_time, SEC_TO_TIME(sch1.cost_time * 60)), \
+			sch2.cost_time - sch1.cost_time, sch2.cost_money - sch1.cost_money \
+			FROM schedule sch1, schedule sch2, station sta1, station sta2, train t \
+			WHERE sch1.train_id = sch2.train_id AND sch1.train_id = t.id AND sch1.station_id = sta1.id \
+			AND sch2.station_id = sta2.id AND sch1.cost_time < sch2.cost_time AND sta1.name = '%s' AND sta2.name = '%s'", 
+			start_station, end_station);
 
 	if(mysql_query(db_conn, content) != 0)
 	{
@@ -322,24 +328,23 @@ int handle_order_request()
 	long int end_station_id;
 
 	fgets(train_name, sizeof(train_name), read_file);
-	train_name[strlen(train_name) - 1] = '\0';
+	remove_ending_line_break(train_name);
 
 	fgets(start_station, sizeof(start_station), read_file);
-	start_station[strlen(start_station) - 1] = '\0';
+	remove_ending_line_break(start_station);
 
 	fgets(end_station, sizeof(end_station), read_file);
-	end_station[strlen(end_station) - 1] = '\0';
+	remove_ending_line_break(end_station);
 
 	fgets(departure_time_str, sizeof(departure_time_str), read_file);
-	departure_time_str[strlen(departure_time_str) - 1] = '\0';
+	remove_ending_line_break(departure_time_str);
 
 	fgets(arrival_time_str, sizeof(arrival_time_str), read_file);
-	arrival_time_str[strlen(arrival_time_str) - 1] = '\0';
+	remove_ending_line_break(arrival_time_str);
 
 	ticket_number = atoi(fgets(content, sizeof(content), read_file));
 	ticket_money = atoi(fgets(content, sizeof(content), read_file));
 
-	/* the algorithm to find the available seats: first find never booked seats then try to reuse booked seats */
 	// get train id
 	snprintf(content, sizeof(content), "SELECT id FROM train WHERE name = '%s'", train_name);
 	if(mysql_query(db_conn, content) != 0)
@@ -400,7 +405,10 @@ int handle_order_request()
 		mysql_free_result(res_set);
 	}
 
-	snprintf(content, sizeof(content), "SELECT id, name FROM seat WHERE train_id = %ld AND id NOT IN (SELECT seat_id FROM ticket WHERE train_id = %ld AND ((departure_time >= '%s' AND departure_time < '%s') OR (arrival_time > '%s' AND arrival_time <= '%s')))", train_id, train_id, departure_time_str, arrival_time_str, departure_time_str, arrival_time_str);	
+	snprintf(content, sizeof(content), "SELECT id, name FROM seat WHERE train_id = %ld \
+			AND id NOT IN (SELECT seat_id FROM ticket WHERE train_id = %ld \
+			AND ((departure_time >= '%s' AND departure_time < '%s') OR (arrival_time > '%s' AND arrival_time <= '%s')))",
+			train_id, train_id, departure_time_str, arrival_time_str, departure_time_str, arrival_time_str);	
 	if(mysql_query(db_conn, content) != 0)
 	{
 		print_mysql_error(db_conn, "can't get available seats");
@@ -428,7 +436,11 @@ int handle_order_request()
 			{
 				row = mysql_fetch_row(res_set);
 				seat_id = atol(row[0]);
-				snprintf(content, sizeof(content), "INSERT INTO ticket (client_id, train_id, seat_id, start_station_id, end_station_id, departure_time, arrival_time, price) VALUES (%ld, %ld, %ld, %ld, %ld, '%s', '%s', %d)", current_client_id, train_id, seat_id, start_station_id, end_station_id, departure_time_str, arrival_time_str, ticket_money);
+				snprintf(content, sizeof(content), "INSERT INTO ticket \
+						(client_id, train_id, seat_id, start_station_id, end_station_id, departure_time, arrival_time, price) \
+						VALUES (%ld, %ld, %ld, %ld, %ld, '%s', '%s', %d)",
+						current_client_id, train_id, seat_id, start_station_id, end_station_id,
+						departure_time_str, arrival_time_str, ticket_money);
 				if(mysql_query(db_conn, content) != 0)
 				{
 					print_mysql_error(db_conn, "can't insert ticket");
@@ -478,7 +490,10 @@ int handle_query_booked_ticket_request()
 	printf("handle query booked ticket request\n");
 	#endif
 	
-	snprintf(content, sizeof(content), "SELECT tic.id, tra.name, sta1.name, sta2.name, tic.departure_time FROM ticket tic, train tra, station sta1, station sta2 WHERE tic.client_id = %ld AND tic.departure_time > CURRENT_TIMESTAMP AND tic.train_id = tra.id AND tic.start_station_id = sta1.id AND tic.end_station_id = sta2.id", current_client_id);
+	snprintf(content, sizeof(content), "SELECT tic.id, tra.name, sta1.name, sta2.name, tic.departure_time \
+			FROM ticket tic, train tra, station sta1, station sta2 \
+			WHERE tic.client_id = %ld AND tic.departure_time > CURRENT_TIMESTAMP \
+			AND tic.train_id = tra.id AND tic.start_station_id = sta1.id AND tic.end_station_id = sta2.id", current_client_id);
 
 	if(mysql_query(db_conn, content) != 0)
 	{
