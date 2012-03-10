@@ -43,5 +43,19 @@ QUERY_BY_STATION_REQUEST
 
 ###############
 QUERY_BY_STATION_RESPONSE
-%d\n%d\n[%s\n%s\n%s\n%s\n%s\n%d\n]* message_type available_train_number [train_name, start_station, end_station, start_time, end_time, cost_money]*(available_train_number indicates the number of following records)
+%d\n%d\n[%s\n%s\n%s\n%s\n%s\n%s\n]* message_type available_train_number [train_name, start_station, end_station, start_time, cost_time, cost_money]*(available_train_number indicates the number of following records)
+###############
+
+
+###############
+ORDER_REQUEST
+%d\n%s\n%s\n%s\n%s\n%s\n%d\n%d\n message_type train_name, start_station, end_station, departure_time, arrival_time, ticket_number, ticket_price
+###############
+
+
+###############
+ORDER_RESPONSE
+%d\n%d\n message_type order_success_or_failure
+if(success)
+[%s\n]*(seat name, the number of seat is specified by ticket_number in ORDER_REQUEST)
 ###############

@@ -179,7 +179,7 @@ int getchoice(char* greet, char* choices[], int commands[])
 	}
 
 	int start_y = 0;
-	int start_x = 0
+	int start_x = 0;
 	int selected;
 	int key = 0;
 
@@ -406,7 +406,7 @@ int run_query_by_station_module()
 	char end_station[MAX_STRING];
 	char* start_station_hint = "Enter the start station:   ";
 	char* end_station_hint = "Enter the end station:     ";
-	char* station_not_exist = "The start station or end station is not exist";
+	char* station_not_exist = "The start station or end station is not exist"; // TODO unused variable
 	char* station_same = "The start station is same with end station";
 	char* no_available_train = "No available trains";
 	int start_y;
@@ -518,11 +518,6 @@ int run_query_by_station_module()
 	free(query_result_select_command);
 
 	return 0;
-}
-
-int run_query_by_train_module()
-{
-return 0;
 }
 
 int run_order_module(char* train_name, char* start_station, char* end_station, char* start_time, int cost_time, int cost_money)
@@ -643,6 +638,128 @@ int run_order_module(char* train_name, char* start_station, char* end_station, c
 
 		refresh();
 		sleep(3);
+	}
+
+	return 0;
+}
+
+int run_refund_module()
+{
+	char* no_ticket = "Sorry, you don't have any ticket";
+	char* refund_success = "Succeed in refunding ticket";
+	char* refund_failure = "Oops, refund ticket has a error";
+	int ticket_number;
+	int start_x;
+	int start_y;
+
+	clear();
+	start_y = 0;
+	start_x = 0;
+
+	// query server, get booked and not expired tickets
+	snprintf(content, sizeof(content), "%d\n", QUERY_BOOKED_TICKET_REQUEST);
+	Write(fileno(write_file), content, sizeof(char) * strlen(content));
+	if(fgets(content, sizeof(content), read_file) == NULL)
+	{
+		fprintf(stderr, "can't get query booked ticket response\n");
+		return -1;
+	}
+	if(atoi(content) != QUERY_BOOKED_TICKET_RESPONSE)
+	{
+		return -1;
+	}
+	fgets(content, sizeof(content), read_file);
+	ticket_number = atoi(content);
+	if(ticket_number == 0)
+	{	
+		show_error(start_y, start_x, no_ticket);
+		sleep(2);
+	}
+	else
+	{
+		query_booked_ticket_result* query_result_ptr = (query_booked_ticket_result*)malloc(sizeof(query_booked_ticket_result) * ticket_number);
+		char** query_result_select_menu = (char**)malloc(sizeof(char*) * (ticket_number + 2)); // add 2 because last item of the menu array is always 0, which is required by getchoice function and we also add a 'back' menu item
+		query_result_select_menu[ticket_number + 1] = 0;
+		int* query_result_select_command = (int*)malloc(sizeof(int) * (ticket_number + 1));
+
+		int i;
+		for(i = 0; i < ticket_number; i++)
+		{
+			query_result_ptr[i].ticket_id = atol(fgets(content, sizeof(content), read_file));	
+
+			fgets(query_result_ptr[i].train_name, sizeof(query_result_ptr[i].train_name), read_file);
+			(query_result_ptr[i].train_name)[strlen(query_result_ptr[i].train_name) - 1] = '\0';
+
+			fgets(query_result_ptr[i].start_station, sizeof(query_result_ptr[i].start_station), read_file);	
+			(query_result_ptr[i].start_station)[strlen(query_result_ptr[i].start_station) - 1] = '\0';
+
+			fgets(query_result_ptr[i].end_station, sizeof(query_result_ptr[i].end_station), read_file);
+			(query_result_ptr[i].end_station)[strlen(query_result_ptr[i].end_station) - 1] = '\0';
+
+			fgets(query_result_ptr[i].departure_time, sizeof(query_result_ptr[i].departure_time), read_file);
+			(query_result_ptr[i].departure_time)[strlen(query_result_ptr[i].departure_time) - 1] = '\0';
+
+			// add a item to menu
+			query_result_select_menu[i] = (char*)malloc(sizeof(char) * BUFFER_SIZE);
+			snprintf(query_result_select_menu[i], BUFFER_SIZE, "Ticket: Train %s From %s To %s Departure Time %s", query_result_ptr[i].train_name, query_result_ptr[i].start_station, query_result_ptr[i].end_station, query_result_ptr[i].departure_time);
+			
+			// add a item to command
+			query_result_select_command[i] = i;
+		}
+
+		// add 'back' menu item and command
+		query_result_select_menu[i] = (char*)malloc(sizeof(char) * MAX_STRING);
+		snprintf(query_result_select_menu[i], MAX_STRING, "<< back");
+		query_result_select_command[i] = i;
+
+		int choice = getchoice("select a ticket to refund", query_result_select_menu, query_result_select_command);
+
+		if(choice < ticket_number) // user select a ticket not 'back'
+		{
+			// notify server to refund the ticket
+			snprintf(content, sizeof(content), "%d\n%ld\n", REFUND_REQUEST, query_result_ptr[choice].ticket_id);
+			Write(fileno(write_file), content, sizeof(char) * strlen(content));
+			if(fgets(content, sizeof(content), read_file) == NULL)
+			{
+				fprintf(stderr, "can't get refund response\n");
+				return -1;
+			}
+			if(atoi(content) != REFUND_RESPONSE)
+			{
+				return -1;
+			}
+			if(atoi(fgets(content, sizeof(content), read_file)) == SUCCESS)
+			{
+				clear();
+				start_y = 0;
+				start_x = 0;
+				snprintf(content, sizeof(content), "%s", refund_success);
+				mvprintw(start_y, start_x, "%s", content);
+				refresh();
+				flash();
+				sleep(2);
+			}
+			else
+			{
+				clear();
+				start_y = 0;
+				start_x = 0;
+				snprintf(content, sizeof(content), "%s",refund_failure);
+				mvprintw(start_y, start_x, "%s", content);
+				refresh();
+				flash();
+				sleep(2);
+			}
+		}
+		
+		// free resource
+		free(query_result_ptr);
+		for(i = 0; i < ticket_number + 1; i++)
+		{
+			free(query_result_select_menu[i]);
+		}
+		free(query_result_select_menu);
+		free(query_result_select_command);
 	}
 
 	return 0;

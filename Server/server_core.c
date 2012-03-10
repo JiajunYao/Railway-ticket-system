@@ -20,6 +20,8 @@ int handle_register_request();
 int handle_login_request();
 int handle_query_by_station_request();
 int handle_order_request();
+int handle_query_booked_ticket_request();
+int handle_refund_request();
 
 void print_mysql_error(MYSQL* conn, char* message);
 
@@ -96,6 +98,20 @@ int run_server_core(FILE* read, FILE* write)
 				if(handle_order_request() == -1)
 				{
 					fprintf(stderr, "handle order request error\n");
+					return -1;
+				}
+				break;
+			case QUERY_BOOKED_TICKET_REQUEST:
+				if(handle_query_booked_ticket_request() == -1)
+				{
+					fprintf(stderr, "handle query booked ticket request error\n");
+					return -1;
+				}
+				break;
+			case REFUND_REQUEST:
+				if(handle_refund_request() == -1)
+				{
+					fprintf(stderr, "handle refund request error\n");
 					return -1;
 				}
 				break;
@@ -223,7 +239,6 @@ int handle_register_request()
 		register_result = SUCCESS;
 	}
 
-	mysql_free_result(res_set);
 	// send response
 	snprintf(content, sizeof(content), "%d\n%d\n", REGISTER_RESPONSE, register_result);
 	Write(fileno(write_file), content, sizeof(char) * strlen(content));
@@ -341,7 +356,7 @@ int handle_order_request()
 			return -1;
 		}
 		row = mysql_fetch_row(res_set);
-		train_id = atoi(row[0]);
+		train_id = atol(row[0]);
 		mysql_free_result(res_set);
 	}
 
@@ -361,7 +376,7 @@ int handle_order_request()
 			return -1;
 		}
 		row = mysql_fetch_row(res_set);
-		start_station_id = atoi(row[0]);
+		start_station_id = atol(row[0]);
 		mysql_free_result(res_set);
 	}
 
@@ -381,7 +396,7 @@ int handle_order_request()
 			return -1;
 		}
 		row = mysql_fetch_row(res_set);
-		end_station_id = atoi(row[0]);
+		end_station_id = atol(row[0]);
 		mysql_free_result(res_set);
 	}
 
@@ -412,13 +427,84 @@ int handle_order_request()
 			for(i = 0; i < ticket_number; i++)
 			{
 				row = mysql_fetch_row(res_set);
-				seat_id = atoi(row[0]);
+				seat_id = atol(row[0]);
 				snprintf(content, sizeof(content), "INSERT INTO ticket (client_id, train_id, seat_id, start_station_id, end_station_id, departure_time, arrival_time, price) VALUES (%ld, %ld, %ld, %ld, %ld, '%s', '%s', %d)", current_client_id, train_id, seat_id, start_station_id, end_station_id, departure_time_str, arrival_time_str, ticket_money);
 				if(mysql_query(db_conn, content) != 0)
 				{
 					print_mysql_error(db_conn, "can't insert ticket");
 				}
+
+				// send seat name
 				snprintf(content, sizeof(content), "%s\n", row[1]);
+				Write(fileno(write_file), content, sizeof(char) * strlen(content));
+			}
+		}
+		mysql_free_result(res_set);
+	}
+
+	return 0;
+}
+
+int handle_refund_request()
+{
+	#ifdef __DEBUG__
+	printf("handle refund request\n");
+	#endif
+	
+	int refund_result;
+	long int ticket_id = atol(fgets(content, sizeof(content), read_file));
+
+	snprintf(content, sizeof(content), "DELETE FROM ticket WHERE id = %ld", ticket_id);
+	if(mysql_query(db_conn, content) != 0)
+	{
+		print_mysql_error(db_conn, "can't delete the ticket");
+		refund_result = FAILURE;
+	}
+	else
+	{
+		refund_result = SUCCESS;
+	}
+
+	// send response
+	snprintf(content, sizeof(content), "%d\n%d\n", REFUND_RESPONSE, refund_result);
+	Write(fileno(write_file), content, sizeof(char) * strlen(content));
+
+	return 0;
+}
+
+int handle_query_booked_ticket_request()
+{
+	#ifdef __DEBUG__
+	printf("handle query booked ticket request\n");
+	#endif
+	
+	snprintf(content, sizeof(content), "SELECT tic.id, tra.name, sta1.name, sta2.name, tic.departure_time FROM ticket tic, train tra, station sta1, station sta2 WHERE tic.client_id = %ld AND tic.departure_time > CURRENT_TIMESTAMP AND tic.train_id = tra.id AND tic.start_station_id = sta1.id AND tic.end_station_id = sta2.id", current_client_id);
+
+	if(mysql_query(db_conn, content) != 0)
+	{
+		print_mysql_error(db_conn, "can't retrieve booked ticket");
+		return -1;
+	}
+	else
+	{
+		res_set = mysql_store_result(db_conn);
+		if(res_set == NULL)
+		{
+			print_mysql_error(db_conn, "mysql_store_result() failed");
+			return -1;
+		}
+		else
+		{
+			int result_number = mysql_num_rows(res_set);
+
+			snprintf(content, sizeof(content), "%d\n%d\n", QUERY_BOOKED_TICKET_RESPONSE, result_number);
+			Write(fileno(write_file), content, sizeof(char) * strlen(content));
+
+			int i;
+			for(i = 0; i < result_number; i++)
+			{
+				row = mysql_fetch_row(res_set);
+				snprintf(content, sizeof(content), "%s\n%s\n%s\n%s\n%s\n", row[0], row[1], row[2], row[3], row[4]);
 				Write(fileno(write_file), content, sizeof(char) * strlen(content));
 			}
 		}

@@ -45,6 +45,10 @@
 #define QUERY_BY_STATION_RESPONSE 11
 #define ORDER_REQUEST 12
 #define ORDER_RESPONSE 13
+#define REFUND_REQUEST 14
+#define REFUND_RESPONSE 15
+#define QUERY_BOOKED_TICKET_REQUEST 16
+#define QUERY_BOOKED_TICKET_RESPONSE 17
 
 typedef struct
 {
@@ -55,6 +59,16 @@ typedef struct
 	int cost_time;
 	int money;
 }query_by_station_result;
+
+
+typedef struct
+{
+	long int ticket_id;
+	char train_name[MAX_STRING];
+	char start_station[MAX_STRING];
+	char end_station[MAX_STRING];
+	char departure_time[MAX_STRING];
+}query_booked_ticket_result;
 
 char* Fgets(char* s, int size, FILE* stream);
 ssize_t Write(int fd, const void *vptr, size_t n);
