@@ -4,14 +4,14 @@
 #include <time.h>
 #include "../client_server.h"
 
-#define QUIT 0
-#define LOGIN 1
-#define REGISTER 2
-#define BOOK 3
-#define REFUND 4
+#define QUIT             0
+#define LOGIN            1
+#define REGISTER         2
+#define BOOK             3
+#define REFUND           4
 #define QUERY_BY_STATION 5
 
-#define ERROR_COLOR 1
+#define ERROR_COLOR      1
 
 /* variable declaration */
 extern int LINES;
@@ -20,20 +20,20 @@ extern int COLS;
 static FILE* read_file;
 static FILE* write_file;
 
-static int choice;
+static int   choice;
 static char* get_choice_title = "login or register";
 
-static char* login_menu[] = {"login", "register", "quit", 0};
-static int login_command[] = {LOGIN, REGISTER, QUIT};
+static char* login_menu[]    = {"login", "register", "quit", 0};
+static int   login_command[] = {LOGIN,   REGISTER,   QUIT};
 
-static char* operation_menu[] = {"book tickets", "refund tickets", "quit", 0};
-static int operation_command[] = {BOOK, REFUND, QUIT};
+static char*  operation_menu[]    = {"book tickets", "refund tickets", "quit", 0};
+static int    operation_command[] = {BOOK,			 REFUND,		   QUIT};
 
-static char* query_menu[] = {"query by station", "quit", 0};
-static int query_command[] = {QUERY_BY_STATION, QUIT};
+static char* query_menu[]    = {"query by station", "quit", 0};
+static int   query_command[] = {QUERY_BY_STATION,	QUIT};
 
-static char** current_menu = login_menu;
-static int* current_command = login_command;
+static char** current_menu    = login_menu;
+static int*   current_command = login_command;
 
 static char content[BUFFER_SIZE];
 
@@ -291,8 +291,8 @@ int run_login_module()
 {
 	char name[MAX_STRING];
 	char passwd[MAX_STRING]; 
-	char* name_hint = "Enter the user name:   ";
-	char* passwd_hint = "Enter the password:    ";
+	char* name_hint           = "Enter the user name:   ";
+	char* passwd_hint         = "Enter the password:    ";
 	char* name_passwd_invalid = "User name and password are invalid";
 
 	clear();
@@ -334,8 +334,8 @@ int run_login_module()
 	else
 	{
 		// set the global current_menu and current_command so we will go to the operation interface
-		current_menu = operation_menu;
-		current_command = operation_command;
+		current_menu     = operation_menu;
+		current_command  = operation_command;
 		get_choice_title = "select an operation";
 	}
 	return 0;
@@ -343,16 +343,16 @@ int run_login_module()
 
 int run_register_module()
 {
-	char name[MAX_STRING];
-	char passwd[MAX_STRING];
-	char confirm_passwd[MAX_STRING];
-	char* name_hint = "Enter the user name:      ";
-	char* passwd_hint = "Enter the password:       ";
+	char  name[MAX_STRING];
+	char  passwd[MAX_STRING];
+	char  confirm_passwd[MAX_STRING];
+	char* name_hint           = "Enter the user name:      ";
+	char* passwd_hint         = "Enter the password:       ";
 	char* confirm_passwd_hint = "Enter the password again:  ";
-	char* passwd_not_same = "Passwords are not same";
-	char* user_exist = "This user name is not available";
-	int start_y;
-	int start_x;
+	char* passwd_not_same     = "Passwords are not same";
+	char* user_exist          = "This user name is not available";
+	int   start_y;
+	int   start_x;
 
 	clear();
 
@@ -409,8 +409,8 @@ int run_register_module()
 int run_book_module()
 {
 	// just go to the query mode interface
-	current_menu = query_menu;
-	current_command = query_command;
+	current_menu     = query_menu;
+	current_command  = query_command;
 	get_choice_title = "select query mode";
 
 	return 0;
@@ -418,16 +418,16 @@ int run_book_module()
 
 int run_query_by_station_module()
 {
-	char start_station[MAX_STRING];
-	char end_station[MAX_STRING];
+	char  start_station[MAX_STRING];
+	char  end_station[MAX_STRING];
 	char* start_station_hint = "Enter the start station:   ";
-	char* end_station_hint = "Enter the end station:     ";
-	char* station_not_exist = "The start station or end station is not exist"; // TODO unused variable
-	char* station_same = "The start station is same with end station";
+	char* end_station_hint   = "Enter the end station:     ";
+	char* station_not_exist  = "The start station or end station is not exist"; // TODO unused variable
+	char* station_same       = "The start station is same with end station";
 	char* no_available_train = "No available trains";
-	int start_y;
-	int start_x;
-	int query_result_num;
+	int   start_y;
+	int   start_x;
+	int   query_result_num;
 
 	clear();
 
@@ -542,15 +542,15 @@ int run_query_by_station_module()
 
 int run_order_module(char* train_name, char* start_station, char* end_station, char* start_time, int cost_time, int cost_money)
 {
-	char ticket_number[MAX_STRING];
+	char  date[MAX_STRING];
+	char  ticket_number[MAX_STRING];
+	char* date_hint          = "Enter the date of departure like 2012-3-8 :";
 	char* ticket_number_hint = "Enter the number of tickets:   ";
-	char date[MAX_STRING];
-	char* date_hint = "Enter the date of departure like 2012-3-8 :";
-	char* no_enough_seats = "Sorry, no enough seats";
-	char* order_success = "Succeed in booking tickets";
-	char* invalid_date = "Your date is invalid";
-	int start_y;
-	int start_x;
+	char* no_enough_seats    = "Sorry, no enough seats";
+	char* order_success      = "Succeed in booking tickets";
+	char* invalid_date       = "Your date is invalid";
+	int   start_y;
+	int   start_x;
 
 	clear();
 
@@ -669,12 +669,12 @@ int run_order_module(char* train_name, char* start_station, char* end_station, c
 
 int run_refund_module()
 {
-	char* no_ticket = "Sorry, you don't have any ticket";
+	char* no_ticket      = "Sorry, you don't have any ticket";
 	char* refund_success = "Succeed in refunding ticket";
 	char* refund_failure = "Oops, refund ticket has a error";
-	int ticket_number;
-	int start_x;
-	int start_y;
+	int   ticket_number;
+	int   start_x;
+	int   start_y;
 
 	clear();
 	start_y = 0;
