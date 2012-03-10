@@ -73,7 +73,7 @@ int connect_fifo_server(char* server_public_fifo_name, FILE** read_file, FILE** 
 		exit(-1);
 	}
 	// get server subprocess id
-	if(fgets(content, sizeof(content), *read_file) == NULL)
+	if(read_line(content, sizeof(content), *read_file, false) == NULL)
 	{
 		fprintf(stderr, "can't get server subprocess id\n");
 		return -1;

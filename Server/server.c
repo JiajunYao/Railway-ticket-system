@@ -58,7 +58,7 @@ int fifo_server_run()
 				fprintf(stderr, "expect a ESTABLISH_CONNECTION_REQUEST but get %s\n", content);
 				exit(-1);
 			}
-			if(fgets(content, sizeof(content), read_file) == NULL)
+			if(read_line(content, sizeof(content), read_file, false) == NULL)
 			{
 				fprintf(stderr, "can't get client pid\n");
 				return -1;

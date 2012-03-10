@@ -4,7 +4,11 @@
 
 #include "client_server.h"
 
-// this function is a wrapper function of c library function fgets, the purpose is to handle the error caused by eof and EINTR
+/*
+ * this function is a wrapper function of c library function fgets, the purpose is to handle the error caused by eof and EINTR
+ * this function should be used when read end may not be available
+ * when you know there is a opened read end, you should use read_line function
+ */
 char* Fgets(char* s, int size, FILE* stream)
 {
 	char* fgets_result = fgets(s, size, stream);
@@ -57,6 +61,25 @@ void remove_ending_line_break(char* string)
 {
 	string[strlen(string) - 1] = '\0';
 }	
+
+/*
+ * this function should be used when you know there is an opened read end
+ * this function will deal with the eof problem which means the read end closed abruptly
+ */
+char* read_line(char* line, int size, FILE* stream, bool exist_on_fail)
+{
+	char* read_result = fgets(line, size, stream);	
+	if(exist_on_fail)
+	{
+		if(read_result == NULL)
+		{
+			fprintf(stderr, "can't read information from another end: %s\n", strerror(errno));
+			exit(-1);
+		}
+	}
+	
+	return read_result;
+}
 
 int Accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 {

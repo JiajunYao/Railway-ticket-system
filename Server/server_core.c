@@ -51,7 +51,7 @@ int run_server_core(FILE* read, FILE* write)
 	do
 	{	
 		errno = 0; // clear the errno
-		if(fgets(content, sizeof(content), read_file) == NULL)
+		if(read_line(content, sizeof(content), read_file, false) == NULL)
 		{
 			if(feof(read_file))
 			{
@@ -146,14 +146,14 @@ int handle_login_request()
 	char passwd[MAX_STRING];
 	int login_result;
 
-	if(fgets(name, sizeof(name), read_file) == NULL)
+	if(read_line(name, sizeof(name), read_file, false) == NULL)
 	{
 		fprintf(stderr, "can't get user name\n");
 		return -1;
 	}
 	remove_ending_line_break(name);
 
-	if(fgets(passwd, sizeof(passwd), read_file) == NULL)
+	if(read_line(passwd, sizeof(passwd), read_file, false) == NULL)
 	{
 		fprintf(stderr, "can't get user password\n");
 		return -1;
@@ -215,14 +215,14 @@ int handle_register_request()
 	char passwd[MAX_STRING];
 	int  register_result;
 
-	if(fgets(name, sizeof(name), read_file) == NULL)
+	if(read_line(name, sizeof(name), read_file, false) == NULL)
 	{
 		fprintf(stderr, "can't get user name\n");
 		return -1;
 	}
 	remove_ending_line_break(name);
 
-	if(fgets(passwd, sizeof(passwd), read_file) == NULL)
+	if(read_line(passwd, sizeof(passwd), read_file, false) == NULL)
 	{
 		fprintf(stderr, "can't get user password\n");
 		return -1;
@@ -256,14 +256,14 @@ int handle_query_by_station_request()
 	char start_station[MAX_STRING];
 	char end_station[MAX_STRING];
 
-	if(fgets(start_station, sizeof(start_station), read_file) == NULL)
+	if(read_line(start_station, sizeof(start_station), read_file, false) == NULL)
 	{
 		fprintf(stderr, "can't get start station\n");
 		return -1;
 	}
 	remove_ending_line_break(start_station);
 
-	if(fgets(end_station, sizeof(end_station), read_file) == NULL)
+	if(read_line(end_station, sizeof(end_station), read_file, false) == NULL)
 	{
 		fprintf(stderr, "can't get end station\n");
 		return -1;
@@ -327,23 +327,23 @@ int handle_order_request()
 	long int start_station_id;
 	long int end_station_id;
 
-	fgets(train_name, sizeof(train_name), read_file);
+	read_line(train_name, sizeof(train_name), read_file, true);
 	remove_ending_line_break(train_name);
 
-	fgets(start_station, sizeof(start_station), read_file);
+	read_line(start_station, sizeof(start_station), read_file, true);
 	remove_ending_line_break(start_station);
 
-	fgets(end_station, sizeof(end_station), read_file);
+	read_line(end_station, sizeof(end_station), read_file, true);
 	remove_ending_line_break(end_station);
 
-	fgets(departure_time_str, sizeof(departure_time_str), read_file);
+	read_line(departure_time_str, sizeof(departure_time_str), read_file, true);
 	remove_ending_line_break(departure_time_str);
 
-	fgets(arrival_time_str, sizeof(arrival_time_str), read_file);
+	read_line(arrival_time_str, sizeof(arrival_time_str), read_file, true);
 	remove_ending_line_break(arrival_time_str);
 
-	ticket_number = atoi(fgets(content, sizeof(content), read_file));
-	ticket_money = atoi(fgets(content, sizeof(content), read_file));
+	ticket_number = atoi(read_line(content, sizeof(content), read_file, true));
+	ticket_money = atoi(read_line(content, sizeof(content), read_file, true));
 
 	// get train id
 	snprintf(content, sizeof(content), "SELECT id FROM train WHERE name = '%s'", train_name);
@@ -464,7 +464,7 @@ int handle_refund_request()
 	#endif
 	
 	int refund_result;
-	long int ticket_id = atol(fgets(content, sizeof(content), read_file));
+	long int ticket_id = atol(read_line(content, sizeof(content), read_file, true));
 
 	snprintf(content, sizeof(content), "DELETE FROM ticket WHERE id = %ld", ticket_id);
 	if(mysql_query(db_conn, content) != 0)

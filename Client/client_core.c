@@ -262,7 +262,7 @@ void draw_menu(char* options[], int current_highlight, int start_y, int start_x)
 		option_ptr++;
 	}
 
-	mvprintw(start_y + current_row + 3, start_x, "Move highlight then press Return");
+	mvprintw(start_y + current_row * 2 + 3, start_x, "Move highlight then press Return");
 	refresh();
 }
 
@@ -273,7 +273,7 @@ int run_quit_module()
 	Write(fileno(write_file), content, sizeof(char) * strlen(content));
 
 	// get reponse
-	if(fgets(content, sizeof(content), read_file) == NULL)
+	if(read_line(content, sizeof(content), read_file, false) == NULL)
 	{
 		fprintf(stderr, "can't get server quit ack\n");
 		return -1;
@@ -313,7 +313,7 @@ int run_login_module()
 	Write(fileno(write_file), content, sizeof(char) * strlen(content));
 
 	// get response
-	if(fgets(content, sizeof(content), read_file) == NULL)
+	if(read_line(content, sizeof(content), read_file, false) == NULL)
 	{
 		fprintf(stderr, "can't get login response\n");
 		return -1;
@@ -323,10 +323,8 @@ int run_login_module()
 		fprintf(stderr, "expect login_response but get %s\n", content);
 		return -1;
 	}
-	if(fgets(content, sizeof(content), read_file) == NULL)
-	{
-		return -1;
-	}
+	read_line(content, sizeof(content), read_file, true);
+
 	if(atoi(content) == FAILURE)
 	{
 		start_y = start_y + 2;
@@ -387,7 +385,7 @@ int run_register_module()
 	Write(fileno(write_file), content, sizeof(char) * strlen(content));
 
 	// get response
-	if(fgets(content, sizeof(content), read_file) == NULL)
+	if(read_line(content, sizeof(content), read_file, false) == NULL)
 	{
 		fprintf(stderr, "can't get register response\n");
 		return -1;
@@ -396,10 +394,8 @@ int run_register_module()
 	{
 		return -1;
 	}
-	if(fgets(content, sizeof(content), read_file) == NULL)
-	{
-		return -1;
-	}
+	read_line(content, sizeof(content), read_file, true);
+
 	if(atoi(content) == FAILURE)
 	{
 		start_y = start_y + 2;
@@ -459,7 +455,7 @@ int run_query_by_station_module()
 	Write(fileno(write_file), content, sizeof(char) * strlen(content));
 
 	// get response
-	if(fgets(content, sizeof(content), read_file) == NULL)
+	if(read_line(content, sizeof(content), read_file, false) == NULL)
 	{
 		fprintf(stderr, "can't get query_by_station response\n");
 		return -1;
@@ -469,11 +465,8 @@ int run_query_by_station_module()
 		return -1;
 	}
 
-	if(fgets(content, sizeof(content), read_file) == NULL)
-	{
-		fprintf(stderr, "can't get query result number\n");
-		return -1;
-	}
+	read_line(content, sizeof(content), read_file, true);
+
 	query_result_num = atoi(content);
 	if(query_result_num == 0)
 	{
@@ -492,21 +485,21 @@ int run_query_by_station_module()
 	for(i = 0; i < query_result_num; i++)
 	{
 		// get train name  and remove the ending line break
-		fgets(query_result_ptr[i].train_name, sizeof(query_result_ptr[i].train_name), read_file);
+		read_line(query_result_ptr[i].train_name, sizeof(query_result_ptr[i].train_name), read_file, true);
 		remove_ending_line_break(query_result_ptr[i].train_name);
 
-		fgets(query_result_ptr[i].start_station, sizeof(query_result_ptr[i].start_station), read_file);	
+		read_line(query_result_ptr[i].start_station, sizeof(query_result_ptr[i].start_station), read_file, true);	
 		remove_ending_line_break(query_result_ptr[i].start_station);
 
-		fgets(query_result_ptr[i].end_station, sizeof(query_result_ptr[i].end_station), read_file);
+		read_line(query_result_ptr[i].end_station, sizeof(query_result_ptr[i].end_station), read_file, true);
 		remove_ending_line_break(query_result_ptr[i].end_station);
 
-		fgets(query_result_ptr[i].start_time, sizeof(query_result_ptr[i].start_time), read_file);
+		read_line(query_result_ptr[i].start_time, sizeof(query_result_ptr[i].start_time), read_file, true);
 		remove_ending_line_break(query_result_ptr[i].start_time);
 
-		query_result_ptr[i].cost_time = atoi(fgets(content, sizeof(content), read_file));
+		query_result_ptr[i].cost_time = atoi(read_line(content, sizeof(content), read_file, true));
 
-		query_result_ptr[i].money = atoi(fgets(content, sizeof(content), read_file));
+		query_result_ptr[i].money = atoi(read_line(content, sizeof(content), read_file, true));
 
 		// add a item to menu
 		query_result_select_menu[i] = (char*)malloc(sizeof(char) * BUFFER_SIZE);
@@ -636,7 +629,7 @@ int run_order_module(char* train_name, char* start_station, char* end_station, c
 	Write(fileno(write_file), content, sizeof(char) * strlen(content));
 
 	//get response
-	if(fgets(content, sizeof(content), read_file) == NULL)
+	if(read_line(content, sizeof(content), read_file, false) == NULL)
 	{
 		fprintf(stderr, "can't get order response\n");
 		return -1;
@@ -645,10 +638,8 @@ int run_order_module(char* train_name, char* start_station, char* end_station, c
 	{
 		return -1;
 	}
-	if(fgets(content, sizeof(content), read_file) == NULL)
-	{
-		return -1;
-	}
+
+	read_line(content, sizeof(content), read_file, true);
 	if(atoi(content) == FAILURE)
 	{
 		start_y = start_y + 2;
@@ -664,7 +655,7 @@ int run_order_module(char* train_name, char* start_station, char* end_station, c
 		for(i = 0; i < atoi(ticket_number); i++)
 		{
 			start_y = start_y + 1;
-			fgets(content, sizeof(content), read_file);
+			read_line(content, sizeof(content), read_file, true);
 			remove_ending_line_break(content);
 			mvprintw(start_y, start_x, "Seat Number: %s", content);
 		}
@@ -694,7 +685,7 @@ int run_refund_module()
 	Write(fileno(write_file), content, sizeof(char) * strlen(content));
 
 	// get response
-	if(fgets(content, sizeof(content), read_file) == NULL)
+	if(read_line(content, sizeof(content), read_file, false) == NULL)
 	{
 		fprintf(stderr, "can't get query booked ticket response\n");
 		return -1;
@@ -703,7 +694,8 @@ int run_refund_module()
 	{
 		return -1;
 	}
-	fgets(content, sizeof(content), read_file);
+
+	read_line(content, sizeof(content), read_file, true);
 	ticket_number = atoi(content);
 	if(ticket_number == 0)
 	{	
@@ -720,18 +712,18 @@ int run_refund_module()
 		int i;
 		for(i = 0; i < ticket_number; i++)
 		{
-			query_result_ptr[i].ticket_id = atol(fgets(content, sizeof(content), read_file));	
+			query_result_ptr[i].ticket_id = atol(read_line(content, sizeof(content), read_file, true));	
 
-			fgets(query_result_ptr[i].train_name, sizeof(query_result_ptr[i].train_name), read_file);
+			read_line(query_result_ptr[i].train_name, sizeof(query_result_ptr[i].train_name), read_file, true);
 			remove_ending_line_break(query_result_ptr[i].train_name);
 
-			fgets(query_result_ptr[i].start_station, sizeof(query_result_ptr[i].start_station), read_file);	
+			read_line(query_result_ptr[i].start_station, sizeof(query_result_ptr[i].start_station), read_file, true);	
 			remove_ending_line_break(query_result_ptr[i].start_station);
 
-			fgets(query_result_ptr[i].end_station, sizeof(query_result_ptr[i].end_station), read_file);
+			read_line(query_result_ptr[i].end_station, sizeof(query_result_ptr[i].end_station), read_file, true);
 			remove_ending_line_break(query_result_ptr[i].end_station);
 
-			fgets(query_result_ptr[i].departure_time, sizeof(query_result_ptr[i].departure_time), read_file);
+			read_line(query_result_ptr[i].departure_time, sizeof(query_result_ptr[i].departure_time), read_file, true);
 			remove_ending_line_break(query_result_ptr[i].departure_time);
 
 			// add a item to menu
@@ -758,7 +750,7 @@ int run_refund_module()
 			Write(fileno(write_file), content, sizeof(char) * strlen(content));
 
 			// get response
-			if(fgets(content, sizeof(content), read_file) == NULL)
+			if(read_line(content, sizeof(content), read_file, false) == NULL)
 			{
 				fprintf(stderr, "can't get refund response\n");
 				return -1;
@@ -767,7 +759,7 @@ int run_refund_module()
 			{
 				return -1;
 			}
-			if(atoi(fgets(content, sizeof(content), read_file)) == SUCCESS)
+			if(atoi(read_line(content, sizeof(content), read_file, true)) == SUCCESS)
 			{
 				clear();
 				start_y = 0;
