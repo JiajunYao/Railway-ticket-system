@@ -18,5 +18,6 @@ Railway-ticket-system
 	1. When you write Makefile, you should write header files in prerequisites for a given target. Becuse if you don't do that, when you change the header file only(may modify a define), make won't recompile the file(it still thinks everything is new).
 	2. I asked a question in stackoverflow: http://stackoverflow.com/questions/9545039/linux-socket-programming-with-the-consideration-of-real-size-of-char
 	3. Wrap the read and write functions because in the socket programming, every read or write may fail and you need to check the various exception conditions.
-
+	4. When debuging with print, you should always add a '\n' to flush the buffer
+	5. Some functions may not clear errno, you should care about that
 
