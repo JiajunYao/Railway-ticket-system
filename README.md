@@ -12,7 +12,7 @@ Railway-ticket-system
 ##DESIGN
 	Because everything is a file, I treat FIFO and socket equally in the program with some exception.
 	The way to connect server and client is different between FIFO version and socket version. But after connection, I get two FILE pointer, one represents for read end and another represents for write end(FIFO is half-duplex so we need two FILE pointer, in the socket version these two pointer are just same), so client and server use these two pointer to communicate with each other(they don't need to know whether the FILE is a socket or FIFO, everything is a file!).
-	All the core functions of the program are in client_core.c and server_core.c respectively. In these two files, only file no concept of socket or FIFO.
+	All the core functions of the program are in client_core.c and server_core.c respectively. In these two files, only file, no concept of socket or FIFO.
 
 ##EXPERIENCE
 	1. When you write Makefile, you should write header files in prerequisites for a given target. Becuse if you don't do that, when you change the header file only(may modify a define), make won't recompile the file(it still thinks everything is new).
@@ -21,4 +21,3 @@ Railway-ticket-system
 	4. When debuging with print, you should always add a '\n' to flush the buffer
 	5. Some functions may not clear errno, you should care about that
 	6. Always check errno or return value after system call or library function call
-
