@@ -1,7 +1,6 @@
 #define _XOPEN_SOURCE 600
 
 #include <curses.h>
-#include <time.h>
 #include "../client_server.h"
 
 #define QUIT             0

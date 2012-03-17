@@ -9,11 +9,19 @@ int socket_client_run();
 
 int main()
 {
-	if(socket_client_run() == -1)
+	#ifdef __FIFO_MODE__
+	if(fifo_client_run() == -1)
 	{
-		fprintf(stderr, "client run error\n");
+		fprintf(stderr, "fifo client run error\n");
 		exit(-1);
 	}
+	#elif defined __SOCKET_MODE__
+	if(socket_client_run() == -1)
+	{
+		fprintf(stderr, "socket client run error\n");
+		exit(-1);
+	}
+	#endif
 
 	return 0;
 }

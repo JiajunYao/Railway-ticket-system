@@ -13,6 +13,7 @@ static MYSQL_RES* res_set;
 
 static FILE* read_file;
 static FILE* write_file;
+static FILE* log_file;
 static char content[BUFFER_SIZE];
 static long int current_client_id;
 
@@ -26,11 +27,12 @@ int handle_query_by_station_request();
 
 void print_mysql_error(MYSQL* conn, char* message);
 
-int run_server_core(FILE* read, FILE* write)
+int run_server_core(FILE* read, FILE* write, FILE* log)
 {
 	// init the static variable
 	read_file = read;
 	write_file = write;
+	log_file = log;
 	current_client_id = -1;
 	
 	// connect database
@@ -446,9 +448,21 @@ int handle_order_request()
 					print_mysql_error(db_conn, "can't insert ticket");
 				}
 
+
 				// send seat name
 				snprintf(content, sizeof(content), "%s\n", row[1]);
 				Write(fileno(write_file), content, sizeof(char) * strlen(content));
+			}
+
+			// order log
+			if(log_file != NULL)
+			{
+				time_t current_time_t = time(0);
+				char current_time_str[50];
+				strftime(current_time_str, 50, "%Y-%m-%d %H:%M:%S", localtime(&current_time_t));
+				snprintf(content, sizeof(content), "Client %ld buy %d ticket(s) from %ld to %ld, take train %ld, order time %s\n", \
+						current_client_id, ticket_number, start_station_id, end_station_id, train_id, current_time_str);
+				fputs(content, log_file);
 			}
 		}
 		mysql_free_result(res_set);
