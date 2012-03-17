@@ -20,4 +20,5 @@ Railway-ticket-system
 	3. Wrap the read and write functions because in the socket programming, every read or write may fail and you need to check the various exception conditions.
 	4. When debuging with print, you should always add a '\n' to flush the buffer
 	5. Some functions may not clear errno, you should care about that
+	6. Always check errno or return value after system call or library function call
 
