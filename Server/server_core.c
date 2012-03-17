@@ -488,6 +488,12 @@ int handle_refund_request()
 	}
 	else
 	{
+		// refund order
+		if(log_file != NULL)
+		{
+			snprintf(content, sizeof(content), "Client %ld refund a ticket\n", current_client_id);
+			fputs(content, log_file);
+		}
 		refund_result = SUCCESS;
 	}
 

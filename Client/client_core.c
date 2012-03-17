@@ -9,6 +9,7 @@
 #define BOOK             3
 #define REFUND           4
 #define QUERY_BY_STATION 5
+#define BACK			 6
 
 #define ERROR_COLOR      1
 
@@ -28,8 +29,8 @@ static int   login_command[] = {LOGIN,   REGISTER,   QUIT};
 static char*  operation_menu[]    = {"book tickets", "refund tickets", "quit", 0};
 static int    operation_command[] = {BOOK,			 REFUND,		   QUIT};
 
-static char* query_menu[]    = {"query by station", "quit", 0};
-static int   query_command[] = {QUERY_BY_STATION,	QUIT};
+static char* query_menu[]    = {"query by station", "<<back", 0};
+static int   query_command[] = {QUERY_BY_STATION,	BACK};
 
 static char** current_menu    = login_menu;
 static int*   current_command = login_command;
@@ -107,13 +108,6 @@ int run_client_core(FILE* read, FILE* write)
 				if(run_refund_module() == -1)
 				{
 					fprintf(stderr, "refund module has error\n");
-					client_core_result = -1;
-				}
-				break;
-			case QUERY_BY_STATION:
-				if(run_query_by_station_module() == -1)
-				{
-					fprintf(stderr, "query by station module has error\n");
 					client_core_result = -1;
 				}
 				break;
@@ -407,10 +401,24 @@ int run_register_module()
 
 int run_book_module()
 {
-	// just go to the query mode interface
-	current_menu     = query_menu;
-	current_command  = query_command;
 	get_choice_title = "select query mode";
+	int choice;
+	do
+	{
+		choice = getchoice(get_choice_title, query_menu, query_command);
+		switch(choice)
+		{
+			case QUERY_BY_STATION:
+				if(run_query_by_station_module() == -1)
+				{
+					fprintf(stderr, "query by station module has error\n");
+					return -1;
+				}
+				break;
+			case BACK:
+				break;
+		}
+	} while (choice != BACK);
 
 	return 0;
 }
